@@ -6,6 +6,10 @@ from scipy.io import loadmat
 import png
 
 def readFlowFile(filepath):
+    """read flow files in flo, mat or png format. The resulting flow has shape height x width x 2.
+    For positions where there is no groundtruth available, the flow is set to np.nan
+    returns: flow with shape height x width x 2
+    """
     if filepath.endswith(".flo"):
         return readFloFlow(filepath)
     elif filepath.endswith(".mat"):
@@ -38,8 +42,8 @@ def readPngFlow(filepath):
 
     invalid_idx = (flow[:, :, 2] == 0)
     flow[:, :, 0:2] = (flow[:, :, 0:2] - 2 ** 15) / 64.0
-    flow[invalid_idx, 0] = 0
-    flow[invalid_idx, 1] = 0
+    flow[invalid_idx, 0] = np.nan
+    flow[invalid_idx, 1] = np.nan
     return flow
 
 

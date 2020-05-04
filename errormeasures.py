@@ -1,6 +1,7 @@
 import numpy as np
 import math
 
+
 def compute_AAE(flow, gt):
     """compute the average angular error (AAE) in degrees between the estimated flow field and the groundtruth flow field
     flow: estimated flow
@@ -9,9 +10,10 @@ def compute_AAE(flow, gt):
     """
     arg = flow[:,:,0] * gt[:,:,0] + flow[:,:,1] * gt[:,:,1] + 1
     arg /= np.sqrt(flow[:,:,0]**2+flow[:,:,1]**2+1) * np.sqrt(gt[:,:,0]**2+gt[:,:,1]**2+1)
-    arg[arg>1.0]=1.0
-    arg[arg<-1.0]=-1.0
-    return np.sum(np.arccos(arg)) / flow.shape[0] / flow.shape[1] / (2*np.pi) * 360.0
+
+    np.clip(arg, -1.0, 1.0)
+
+    return np.nansum(np.arccos(arg, where=~np.isnan(arg))) / np.count_nonzero(~np.isnan(arg)) / (2*np.pi) * 360.0
 
 
 def compute_EE(flow, gt):
@@ -55,3 +57,8 @@ def compute_BP(flow, gt):
     total_mask = pix_err  # & pix_err_rel # Pixel relative error is mentioned on Kitti webpage
 
     return 100 * total_mask.sum() / float(pix_cnt)
+
+
+def printAllErrorMeasures(flow, gt):
+    for err, name in zip([compute_AAE, compute_AEE, compute_BP], ["AAE", "AEE", "BP"]):
+        print(f"{name:3s}: {err(flow,gt):.2f}")
