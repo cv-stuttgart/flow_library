@@ -33,7 +33,6 @@ def readPngFlow(filepath):
     flow_direct = flow_object.asDirect()
     flow_data = list(flow_direct[2])
     (w, h) = flow_direct[3]['size']
-    print("Reading %d x %d flow file in .png format" % (h, w))
     flow = np.zeros((h, w, 3), dtype=np.float64)
     for i in range(len(flow_data)):
         flow[i, :, 0] = flow_data[i][0::3]
