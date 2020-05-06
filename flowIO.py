@@ -43,7 +43,7 @@ def readPngFlow(filepath):
     flow[:, :, 0:2] = (flow[:, :, 0:2] - 2 ** 15) / 64.0
     flow[invalid_idx, 0] = np.nan
     flow[invalid_idx, 1] = np.nan
-    return flow
+    return flow[:, :, :2]
 
 
 # ".flo" file format used for optical flow evaluation

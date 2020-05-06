@@ -9,25 +9,35 @@ def compute_AAE(flow, gt):
     return: AAE in [deg]
     """
     arg = flow[:,:,0] * gt[:,:,0] + flow[:,:,1] * gt[:,:,1] + 1
+
+    # number of valid pixels:
+    count = np.count_nonzero(~np.isnan(arg))
+
     arg /= np.sqrt(flow[:,:,0]**2+flow[:,:,1]**2+1) * np.sqrt(gt[:,:,0]**2+gt[:,:,1]**2+1)
 
-    np.clip(arg, -1.0, 1.0)
+    # set nan values to 1 since arccos(1)=0
+    arg = np.nan_to_num(arg, nan=1.0)
 
-    return np.nansum(np.arccos(arg, where=~np.isnan(arg))) / np.count_nonzero(~np.isnan(arg)) / (2*np.pi) * 360.0
+    # clip to the arccos range [-1;1]
+    arg[arg>1.0] = 1.0
+    arg[arg<-1.0] = -1.0
+
+    angular_error = np.arccos(arg)
+
+    return np.sum(angular_error) / count / (2*np.pi) * 360.0
 
 
 def compute_EE(flow, gt):
-    flow_comp = flow[..., :2]
-    gt_comp = gt[..., :2]
-
-    diff = flow_comp - gt_comp
-    diff = np.square(diff)
+    """compute the endpoint error for every pixel location
+    flow: estimated flow
+    gt: ground truth flow
+    return: 2D np array with pixel-wise endpoint error or nan if no groundtruth is present
+    """
+    diff = np.square(flow - gt)
     comp = np.sum(diff, axis=-1)
     comp = np.sqrt(comp)
 
-    mask = gt[..., -1] == 0
-    comp[mask] = 0.0
-    return comp, (gt[..., -1] != 0).sum()
+    return comp
 
 
 def compute_AEE(flow, gt):
@@ -35,30 +45,50 @@ def compute_AEE(flow, gt):
     flow: estimated flow
     gt: groundtruth flow
     """
-    ee, pix_cnt = compute_EE(flow, gt)
-    return ee.sum() / float(pix_cnt)
+    ee = compute_EE(flow, gt)
+    count = np.count_nonzero(~np.isnan(ee))
+    return np.nansum(ee) / count
 
 
-def compute_BP(flow, gt):
+def compute_BP(flow, gt, useKITTI15=False):
     """compute the bad pixel error (BP) between the estimated flow field and the groundtruth flow field.
-    The bad pixel error is defined as the percentage of pixels whose endpoint error exceeds 3.
+    The bad pixel error is defined as the percentage of valid pixels.
+    Valid pixel are generally defined as those whose endpoint is smaller than 3px.
+    An extension to this definition used for the KITTI15 dataset is that a pixel is valid if
+    the endpoint error is smaller than 3px OR the is less than 5% of the groundtruth vector length.
+    This extension has an influence if the groundtruth vector lenth is > 60px.
     flow: estimated flow
     gt: groundtruth flow
+    useKITTI15: boolean flag if the KITTI15 calculation method should be used (gives better results)
     return: BP error as percentage [0;100]
     """
-    ee, pix_cnt = compute_EE(flow, gt)
+    ee = compute_EE(flow, gt)
 
-    pix_err = ee >= 3.0
+    # number of valid pixels:
+    count = np.count_nonzero(~np.isnan(ee))
 
-    vec_length = np.sqrt(np.square(gt[..., 0]) + np.square(gt[..., 1]))
-    err_map = vec_length * 0.05
-    pix_err_rel = ee >= err_map
+    # set the ee of nan pixels to zero
+    ee = np.nan_to_num(ee, nan=0.0)
+    abs_err = ee >= 3.0
 
-    total_mask = pix_err  # & pix_err_rel # Pixel relative error is mentioned on Kitti webpage
+    if useKITTI15:
+        gt_vec_length = np.sqrt(np.square(gt[..., 0]) + np.square(gt[..., 1]))
+        rel_err = ee >= 0.05 * gt_vec_length
 
-    return 100 * total_mask.sum() / float(pix_cnt)
+        bp_mask = abs_err & rel_err
+    else:
+        bp_mask = abs_err
+
+    return 100 * np.sum(bp_mask) / count
 
 
 def printAllErrorMeasures(flow, gt):
     for err, name in zip([compute_AAE, compute_AEE, compute_BP], ["AAE", "AEE", "BP"]):
         print(f"{name:3s}: {err(flow,gt):.2f}")
+
+
+def getAllErrorMeasures(flow, gt):
+    result = {}
+    for err, name in zip([compute_AAE, compute_AEE, compute_BP], ["AAE", "AEE", "BP"]):
+        result[name] = err(flow, gt)
+    return result
