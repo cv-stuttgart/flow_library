@@ -7,23 +7,23 @@ def compute_AAE(flow, gt):
     gt: groundtruth flow
     return: AAE in [deg]
     """
-    arg = flow[:,:,0] * gt[:,:,0] + flow[:,:,1] * gt[:,:,1] + 1
+    arg = flow[:, :, 0] * gt[:, :, 0] + flow[:, :, 1] * gt[:, :, 1] + 1
 
     # number of valid pixels:
     count = np.count_nonzero(~np.isnan(arg))
 
-    arg /= np.sqrt(flow[:,:,0]**2+flow[:,:,1]**2+1) * np.sqrt(gt[:,:,0]**2+gt[:,:,1]**2+1)
+    arg /= np.sqrt(flow[:, :, 0]**2 + flow[:, :, 1]**2 + 1) * np.sqrt(gt[:, :, 0]**2 + gt[:, :, 1]**2 + 1)
 
     # set nan values to 1 since arccos(1)=0
     arg = np.nan_to_num(arg, nan=1.0)
 
     # clip to the arccos range [-1;1]
-    arg[arg>1.0] = 1.0
-    arg[arg<-1.0] = -1.0
+    arg[arg > 1.0] = 1.0
+    arg[arg < -1.0] = -1.0
 
     angular_error = np.arccos(arg)
 
-    return np.sum(angular_error) / count / (2*np.pi) * 360.0
+    return np.sum(angular_error) / count / (2 * np.pi) * 360.0
 
 
 def compute_EE(flow, gt):
