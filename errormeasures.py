@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 
 def compute_AAE(flow, gt):
