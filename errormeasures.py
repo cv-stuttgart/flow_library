@@ -81,6 +81,10 @@ def compute_BP(flow, gt, useKITTI15=False):
     return 100 * np.sum(bp_mask) / count
 
 
+def compute_BP_KITTI15(flow, gt):
+    return compute_BP(flow, gt, useKITTI15=True)
+
+
 def printAllErrorMeasures(flow, gt):
     for err, name in zip([compute_AAE, compute_AEE, compute_BP], ["AAE", "AEE", "BP"]):
         print(f"{name:3s}: {err(flow,gt):.2f}")
@@ -88,6 +92,6 @@ def printAllErrorMeasures(flow, gt):
 
 def getAllErrorMeasures(flow, gt):
     result = {}
-    for err, name in zip([compute_AAE, compute_AEE, compute_BP], ["AAE", "AEE", "BP"]):
+    for err, name in zip([compute_AAE, compute_AEE, compute_BP, compute_BP_KITTI15], ["AAE", "AEE", "BP", "BPKITTI"]):
         result[name] = err(flow, gt)
     return result
