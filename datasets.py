@@ -65,7 +65,7 @@ def getTrainDataset(dataset_name, kitti_flowtype="flow_noc", sintel_imagetype="f
     "kitti15":
         {
             "base": "training",
-            "image_path": "image_3",
+            "image_path": "image_2",
             "image_datatype": ".png",
             "flow_path": kitti_flowtype,
             "flow_datatype": ".png",
