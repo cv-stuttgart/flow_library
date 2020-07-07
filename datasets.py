@@ -1,4 +1,5 @@
 import os
+import re
 from glob import iglob
 from itertools import chain
 
@@ -132,3 +133,18 @@ def getTrainDataset(dataset_name, kitti_flowtype="flow_noc", sintel_imagetype="f
         result[sequence] = {"flows": flows, "images": images}
 
     return result
+
+
+def findGroundtruth(filepath):
+    sintel_seq = ["alley_1", "alley_2", "ambush_2", "ambush_4", "ambush_5", "ambush_6", "ambush_7", "bamboo_1", "bamboo_2", "bandage_1", "bandage_2", "cave_2", "cave_4", "market_2", "market_5", "market_6", "mountain_1", "shaman_2", "shaman_3", "sleeping_1", "sleeping_2", "temple_2", "temple_3"]
+
+    sequence = None
+    for sq in sintel_seq:
+        if sq in filepath:
+            sequence = sq
+
+    if sequence is not None:
+        m = re.search(r"frame_(\d\d\d\d)", filepath)
+        if m:
+            framenum = int(m.group(1))
+            return getTrainDataset("mpi_sintel")[sequence][framenum - 1]
