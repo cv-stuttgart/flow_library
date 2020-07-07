@@ -32,7 +32,10 @@ def colorplot(flow, max_scale=1, auto_scale=False):
     # reset flow
     flow[nan, :] = np.nan
 
-    return rgb
+    if auto_scale:
+        return rgb, max_scale
+    else:
+        return rgb
 
 
 def errorplot(flow, gt):
