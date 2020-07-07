@@ -39,17 +39,19 @@ def compute_EE(flow, gt):
     return comp
 
 
-def compute_AEE(flow, gt):
+def compute_AEE(flow, gt, ee=None):
     """compute the average endpoint error (AEE) between the estimated flow field and the groundtruth flow field
     flow: estimated flow
     gt: groundtruth flow
+    ee: precomputed endpoint error
     """
-    ee = compute_EE(flow, gt)
+    if ee is None:
+        ee = compute_EE(flow, gt)
     count = np.count_nonzero(~np.isnan(ee))
     return np.nansum(ee) / count
 
 
-def compute_BP(flow, gt, useKITTI15=False):
+def compute_BP(flow, gt, useKITTI15=False, ee=None):
     """compute the bad pixel error (BP) between the estimated flow field and the groundtruth flow field.
     The bad pixel error is defined as the percentage of valid pixels.
     Valid pixel are generally defined as those whose endpoint is smaller than 3px.
@@ -59,9 +61,11 @@ def compute_BP(flow, gt, useKITTI15=False):
     flow: estimated flow
     gt: groundtruth flow
     useKITTI15: boolean flag if the KITTI15 calculation method should be used (gives better results)
+    ee: precomputed endpoint error
     return: BP error as percentage [0;100]
     """
-    ee = compute_EE(flow, gt)
+    if ee is None:
+        ee = compute_EE(flow, gt)
 
     # number of valid pixels:
     count = np.count_nonzero(~np.isnan(ee))
@@ -81,8 +85,8 @@ def compute_BP(flow, gt, useKITTI15=False):
     return 100 * np.sum(bp_mask) / count
 
 
-def compute_BP_KITTI15(flow, gt):
-    return compute_BP(flow, gt, useKITTI15=True)
+def compute_BP_KITTI15(flow, gt, ee=None):
+    return compute_BP(flow, gt, useKITTI15=True, ee=ee)
 
 
 def printAllErrorMeasures(flow, gt):
@@ -92,6 +96,10 @@ def printAllErrorMeasures(flow, gt):
 
 def getAllErrorMeasures(flow, gt):
     result = {}
-    for err, name in zip([compute_AAE, compute_AEE, compute_BP, compute_BP_KITTI15], ["AAE", "AEE", "BP", "BPKITTI"]):
-        result[name] = err(flow, gt)
+    result["AAE"] = compute_AAE(flow, gt)
+
+    # precompute EE
+    ee = compute_EE(flow, gt)
+    for err, name in zip([compute_AEE, compute_BP, compute_BP_KITTI15], ["AEE", "BP", "BPKITTI"]):
+        result[name] = err(flow, gt, ee=ee)
     return result
