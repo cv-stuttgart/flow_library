@@ -6,10 +6,14 @@ from matplotlib.widgets import Slider
 import colorplot
 import flowIO
 import sys
+import os
 
 
 def showFlow(filepath):
     flow = flowIO.readFlowFile(filepath)
+
+    dir_name = os.path.dirname(filepath)
+    dir_entries = [os.path.join(dir_name, i) for i in sorted(os.listdir(dir_name))]
 
     fig, ax = plt.subplots()
     fig.canvas.set_window_title(filepath)
@@ -31,11 +35,33 @@ def showFlow(filepath):
         i = int(x + 0.5)
         j = int(y + 0.5)
         if i >= 0 and i < flow.shape[1] and j >= 0 and j < flow.shape[0]:
-            return "pos: ({: 4d},{: 4d}), flow: ({: 4.2f}, {: 4.2f}) ".format(i, j, flow[j, i,0], flow[j, i, 1])
+            return "pos: ({: 4d},{: 4d}), flow: ({: 4.2f}, {: 4.2f}) ".format(i, j, flow[j, i, 0], flow[j, i, 1])
 
         return 'x=%1.4f, y=%1.4f' % (x, y)
 
+    def keypress(event):
+        nonlocal filepath
+        print(event.key)
+        if event.key not in ["left", "right"]:
+            return
+        idx = dir_entries.index(filepath)
+        print(idx)
+        if event.key == "left" and idx > 0:
+            filepath = dir_entries[idx - 1]
+            flow = flowIO.readFlowFile(filepath)
+            ax_implot.set_data(colorplot.colorplot(flow, max_scale=slider.val))
+            fig.canvas.draw_idle()
+            fig.canvas.set_window_title(filepath)
+        elif event.key == "right" and idx < len(dir_entries) - 1:
+            filepath = dir_entries[idx + 1]
+            flow = flowIO.readFlowFile(filepath)
+            ax_implot.set_data(colorplot.colorplot(flow, max_scale=slider.val))
+            fig.canvas.draw_idle()
+            fig.canvas.set_window_title(filepath)
+
     ax.format_coord = format_coord
+
+    fig.canvas.mpl_connect('key_press_event', keypress)
 
     slider.on_changed(update)
 
