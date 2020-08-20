@@ -4,7 +4,7 @@ import math
 import errormeasures
 
 
-def colorplot(flow, max_scale=1, auto_scale=False):
+def colorplot(flow, max_scale=1, auto_scale=False, transform=None):
     """
     color-codes a flow input using the color-coding by [Bruhn 2006]
     """
@@ -21,7 +21,22 @@ def colorplot(flow, max_scale=1, auto_scale=False):
     hue[(hue < 180) & (hue >= 90)] = (hue[(hue < 180) & (hue >= 90)] - 90) * 60 / 90 + 60
     hue[hue >= 180] = (hue[hue >= 180] - 180) * 240 / 180 + 120
     hue /= 360
-    value = flow_gradientmag / float(max_scale)
+    if transform is None:
+        value = flow_gradientmag / float(max_scale)
+    elif transform == "log":
+        # map the range [0-max_scale] to [1-10]:
+        value = 9 * flow_gradientmag / float(max_scale) + 1
+        # log10:
+        value = np.log10(value)
+    elif transform == "loglog":
+        # map the range [0-max_scale] to [1-10]:
+        value = 9 * flow_gradientmag / float(max_scale) + 1
+        # log10:
+        value = np.log10(value)
+        value = 9 * value + 1
+        value = np.log10(value)
+    else:
+        raise ValueError("wrong value for parameter transform")
     value[value > 1.0] = 1.0
     sat = np.ones((flow.shape[0], flow.shape[1]))
     hsv = np.stack((hue, sat, value), axis=-1)
