@@ -147,4 +147,5 @@ def findGroundtruth(filepath):
         m = re.search(r"frame_(\d\d\d\d)", filepath)
         if m:
             framenum = int(m.group(1))
-            return getTrainDataset("mpi_sintel")[sequence][framenum - 1]
+            return getTrainDataset("mpi_sintel")[sequence]["flows"][framenum - 1]
+    return None
