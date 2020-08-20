@@ -5,6 +5,8 @@ from matplotlib.widgets import Slider
 
 import colorplot
 import flowIO
+import datasets
+import errormeasures
 import sys
 import os
 
@@ -26,6 +28,18 @@ def showFlow(filepath):
     axslider = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor='lightgoldenrodyellow')
     slider = Slider(axslider, "max", valmin=0, valmax=200, valinit=max_scale, closedmin=False)
 
+    def updateEverything():
+        nonlocal flow
+        fig.canvas.set_window_title(filepath)
+        flow = flowIO.readFlowFile(filepath)
+        gt = datasets.findGroundtruth(filepath)
+        if gt:
+            gt_flow = flowIO.readFlowFile(gt)
+            errors = errormeasures.getAllErrorMeasures(flow, gt_flow)
+            fig.suptitle(f"AAE: {errors['AAE']:.3f}, AEE: {errors['AEE']:.3f}, BP: {errors['BP']:.3f}, BPKITTI: {errors['BPKITTI']:.3f}")
+        ax_implot.set_data(colorplot.colorplot(flow, max_scale=slider.val))
+        fig.canvas.draw_idle()
+
     def update(val):
         val = slider.val
         ax_implot.set_data(colorplot.colorplot(flow, max_scale=val))
@@ -41,29 +55,23 @@ def showFlow(filepath):
 
     def keypress(event):
         nonlocal filepath
-        print(event.key)
         if event.key not in ["left", "right"]:
             return
         idx = dir_entries.index(filepath)
-        print(idx)
         if event.key == "left" and idx > 0:
             filepath = dir_entries[idx - 1]
-            flow = flowIO.readFlowFile(filepath)
-            ax_implot.set_data(colorplot.colorplot(flow, max_scale=slider.val))
-            fig.canvas.draw_idle()
-            fig.canvas.set_window_title(filepath)
+            updateEverything()
         elif event.key == "right" and idx < len(dir_entries) - 1:
             filepath = dir_entries[idx + 1]
-            flow = flowIO.readFlowFile(filepath)
-            ax_implot.set_data(colorplot.colorplot(flow, max_scale=slider.val))
-            fig.canvas.draw_idle()
-            fig.canvas.set_window_title(filepath)
+            updateEverything()
 
     ax.format_coord = format_coord
 
     fig.canvas.mpl_connect('key_press_event', keypress)
 
     slider.on_changed(update)
+
+    updateEverything()
 
     plt.show()
 
