@@ -103,3 +103,9 @@ def getAllErrorMeasures(flow, gt):
     for err, name in zip([compute_AEE, compute_BP, compute_BP_KITTI15], ["AEE", "BP", "BPKITTI"]):
         result[name] = err(flow, gt, ee=ee)
     return result
+
+
+def getAllErrorMeasures_area(flow, gt, area):
+    gt_area = gt.copy()
+    gt_area[np.invert(area)] = np.nan
+    return getAllErrorMeasures(flow, gt_area)
