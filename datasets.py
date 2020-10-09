@@ -152,3 +152,16 @@ def findGroundtruth(filepath):
             except Exception as e:
                 print(e)
     return None
+
+
+def getSintelTest(sintel_imagetype):
+    assert(sintel_imagetype in ["clean", "final"])
+    basepath = os.getenv("DATASETS", "")
+    basepath = os.path.join(basepath, "mpi_sintel", "test", sintel_imagetype)
+    result = {}
+    for sequence in sorted(os.listdir(basepath)):
+        result[sequence] = {"images": []}
+        sq_path = os.path.join(basepath, sequence)
+        for frame in sorted(os.listdir(sq_path)):
+            result[sequence]["images"].append(os.path.join(sq_path, frame))
+    return result
