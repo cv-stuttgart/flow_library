@@ -144,6 +144,7 @@ def findGroundtruth(filepath):
             sequence = sq
 
     if sequence is not None:
+        # might be sintel
         m = re.search(r"frame_(\d\d\d\d)", filepath)
         if m:
             framenum = int(m.group(1))
@@ -151,6 +152,13 @@ def findGroundtruth(filepath):
                 return getTrainDataset("mpi_sintel")[sequence]["flows"][framenum - 1]
             except Exception as e:
                 print(e)
+    else:
+        # could be kitti
+        if "kitti15" in filepath.lower() or "kitti_15" in filepath.lower() or "kitti-15" in filepath.lower():
+            m = re.search(r"(\d\d\d\d\d\d)_10", filepath)
+            if m:
+                sequence = m.group(1)
+                return getTrainDataset("kitti15", kitti_flowtype="flow_occ")[sequence]["flows"][0]
     return None
 
 
