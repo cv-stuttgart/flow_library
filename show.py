@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
+from matplotlib.widgets import Slider, RadioButtons
 
 import colorplot
 import flowIO
@@ -25,8 +25,10 @@ def showFlow(filepath):
     plt.axis("off")
     ax_implot = plt.imshow(rgb_vis, interpolation="nearest")
 
-    axslider = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor='lightgoldenrodyellow')
+    axslider = plt.axes([0.1, 0.005, 0.6, 0.095], facecolor='lightgoldenrodyellow')
+    axbuttons = plt.axes([0.8, 0.005, 0.1, 0.095], facecolor='lightgoldenrodyellow')
     slider = Slider(axslider, "max", valmin=0, valmax=200, valinit=max_scale, closedmin=False)
+    buttons = RadioButtons(axbuttons, ["a", "b", "c"])
 
     def updateEverything():
         nonlocal flow
