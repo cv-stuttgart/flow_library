@@ -158,7 +158,10 @@ def findGroundtruth(filepath):
             m = re.search(r"(\d\d\d\d\d\d)_10", filepath)
             if m:
                 sequence = m.group(1)
-                return getTrainDataset("kitti15", kitti_flowtype="flow_occ")[sequence]["flows"][0]
+                try:
+                    return getTrainDataset("kitti15", kitti_flowtype="flow_occ")[sequence]["flows"][0]
+                except Exception as e:
+                    print(e)
     return None
 
 
