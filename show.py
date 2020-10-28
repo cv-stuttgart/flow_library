@@ -10,7 +10,18 @@ import errormeasures
 import sys
 import os
 
-BUTTONS_DICT = {"Normal": None, "Log": "log", "LogLog": "loglog"}
+
+def getFlowVis(flow, vistype="Normal", auto_scale=False, max_scale=-1, gt=None):
+    if vistype == "Normal":
+        return colorplot.colorplot(flow, auto_scale=auto_scale, max_scale=max_scale)
+    elif vistype == "Log":
+        return colorplot.colorplot(flow, auto_scale=auto_scale, transform="log", max_scale=max_scale)
+    elif vistype == "LogLog":
+        return colorplot.colorplot(flow, auto_scale=auto_scale, transform="loglog", max_scale=max_scale)
+    elif vistype == "Error":
+        if gt is None:
+            return None
+
 
 
 def showFlow(filepath):
@@ -23,14 +34,14 @@ def showFlow(filepath):
     fig.canvas.set_window_title(filepath)
     plt.subplots_adjust(left=0, right=1, bottom=0.2)
 
-    rgb_vis, max_scale = colorplot.colorplot(flow, auto_scale=True)
+    rgb_vis, max_scale = getFlowVis(flow, auto_scale=True)
     plt.axis("off")
     ax_implot = plt.imshow(rgb_vis, interpolation="nearest")
 
     axslider = plt.axes([0.05, 0.085, 0.6, 0.03], facecolor='lightgoldenrodyellow')
     axbuttons = plt.axes([0.7, 0.005, 0.25, 0.195], facecolor='lightgoldenrodyellow')
     slider = Slider(axslider, "max", valmin=0, valmax=200, valinit=max_scale, closedmin=False)
-    buttons = RadioButtons(axbuttons, ["Normal", "Log", "LogLog"])
+    buttons = RadioButtons(axbuttons, ["Normal", "Log", "LogLog", "Error"])
 
     def updateEverything():
         nonlocal flow
@@ -41,12 +52,14 @@ def showFlow(filepath):
             gt_flow = flowIO.readFlowFile(gt)
             errors = errormeasures.getAllErrorMeasures(flow, gt_flow)
             fig.suptitle(f"AAE: {errors['AAE']:.3f}, AEE: {errors['AEE']:.3f}, BP: {errors['BP']:.3f}, BPKITTI: {errors['BPKITTI']:.3f}")
-        ax_implot.set_data(colorplot.colorplot(flow, max_scale=slider.val, transform=BUTTONS_DICT[buttons.value_selected]))
+        colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=slider.val, gt=gt)
+        ax_implot.set_data(colorvis)
         fig.canvas.draw_idle()
 
     def update(val):
         val = slider.val
-        ax_implot.set_data(colorplot.colorplot(flow, max_scale=val, transform=BUTTONS_DICT[buttons.value_selected]))
+        colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=val)
+        ax_implot.set_data(colorvis)
         fig.canvas.draw_idle()
 
     def format_coord(x, y):
@@ -72,9 +85,7 @@ def showFlow(filepath):
     ax.format_coord = format_coord
 
     fig.canvas.mpl_connect('key_press_event', keypress)
-
     slider.on_changed(update)
-
     buttons.on_clicked(update)
 
     updateEverything()
