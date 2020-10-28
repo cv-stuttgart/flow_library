@@ -34,7 +34,6 @@ def showFlow(filepath):
 
     def updateEverything():
         nonlocal flow
-        print(buttons.value_selected)
         fig.canvas.set_window_title(filepath)
         flow = flowIO.readFlowFile(filepath)
         gt = datasets.findGroundtruth(filepath)
