@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RadioButtons
+import numpy as np
 
 import colorplot
 import flowIO
@@ -20,12 +21,15 @@ def getFlowVis(flow, vistype="Normal", auto_scale=False, max_scale=-1, gt=None):
         return colorplot.colorplot(flow, auto_scale=auto_scale, transform="loglog", max_scale=max_scale)
     elif vistype == "Error":
         if gt is None:
-            return None
+            return np.zeros((flow.shape[0], flow.shape[1]))
+        else:
+            return colorplot.errorplot(flow, gt)
 
 
 
 def showFlow(filepath):
     flow = flowIO.readFlowFile(filepath)
+    gt_flow = None
 
     dir_name = os.path.dirname(filepath)
     dir_entries = [os.path.join(dir_name, i) for i in sorted(os.listdir(dir_name))]
@@ -45,6 +49,7 @@ def showFlow(filepath):
 
     def updateEverything():
         nonlocal flow
+        nonlocal gt_flow
         fig.canvas.set_window_title(filepath)
         flow = flowIO.readFlowFile(filepath)
         gt = datasets.findGroundtruth(filepath)
@@ -52,13 +57,13 @@ def showFlow(filepath):
             gt_flow = flowIO.readFlowFile(gt)
             errors = errormeasures.getAllErrorMeasures(flow, gt_flow)
             fig.suptitle(f"AAE: {errors['AAE']:.3f}, AEE: {errors['AEE']:.3f}, BP: {errors['BP']:.3f}, BPKITTI: {errors['BPKITTI']:.3f}")
-        colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=slider.val, gt=gt)
+        colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=slider.val, gt=gt_flow)
         ax_implot.set_data(colorvis)
         fig.canvas.draw_idle()
 
     def update(val):
         val = slider.val
-        colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=val)
+        colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=val, gt=gt_flow)
         ax_implot.set_data(colorvis)
         fig.canvas.draw_idle()
 
