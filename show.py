@@ -24,6 +24,11 @@ def getFlowVis(flow, vistype="Normal", auto_scale=False, max_scale=-1, gt=None):
             return np.zeros((flow.shape[0], flow.shape[1]))
         else:
             return colorplot.errorplot(flow, gt)
+    elif vistype == "Error Fl":
+        if gt is None:
+            return np.zeros((flow.shape[0], flow.shape[1]))
+        else:
+            return colorplot.errorplot_Fl(flow, gt)
 
 
 
@@ -45,7 +50,7 @@ def showFlow(filepath):
     axslider = plt.axes([0.05, 0.085, 0.6, 0.03], facecolor='lightgoldenrodyellow')
     axbuttons = plt.axes([0.7, 0.005, 0.25, 0.195], facecolor='lightgoldenrodyellow')
     slider = Slider(axslider, "max", valmin=0, valmax=200, valinit=max_scale, closedmin=False)
-    buttons = RadioButtons(axbuttons, ["Normal", "Log", "LogLog", "Error"])
+    buttons = RadioButtons(axbuttons, ["Normal", "Log", "LogLog", "Error", "Error Fl"])
 
     def updateEverything():
         nonlocal flow

@@ -80,3 +80,23 @@ def errorplot(flow, gt):
     result[nan, :] = [0, 0, 0]
 
     return result
+
+
+def errorplot_Fl(flow, gt):
+    ee = errormeasures.compute_EE(flow, gt)
+    nan = np.isnan(ee)
+    ee = np.nan_to_num(ee)
+    result = np.zeros((ee.shape[0], ee.shape[1], 3), dtype=int)
+
+    abs_err = ee >= 3.0
+
+    gt_vec_length = np.sqrt(np.square(gt[..., 0]) + np.square(gt[..., 1]))
+    rel_err = ee >= 0.05 * gt_vec_length
+
+    bp_mask = abs_err & rel_err
+
+    result[:,:,:] = (0, 255, 0)
+    result[bp_mask,:] = (255, 0, 0)
+
+    result[nan, :] = [0,0,0]
+    return result
