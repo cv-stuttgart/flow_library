@@ -31,6 +31,17 @@ def getFlowVis(flow, vistype="Normal", auto_scale=False, max_scale=-1, gt=None):
             return colorplot.errorplot_Fl(flow, gt)
 
 
+def maximizeWindow():
+    backend = plt.get_backend().lower()
+    print(backend)
+    mng = plt.get_current_fig_manager()
+    if backend == "tkagg":
+        mng.window.state('zoomed')
+    elif backend == "wxagg":
+        mng.frame.Maximize(True)
+    elif backend == "qt4agg" or backend == "qt5agg":
+        mng.window.showMaximized()
+
 
 def showFlow(filepath):
     flow = flowIO.readFlowFile(filepath)
@@ -40,6 +51,7 @@ def showFlow(filepath):
     dir_entries = [os.path.join(dir_name, i) for i in sorted(os.listdir(dir_name))]
 
     fig, ax = plt.subplots()
+    maximizeWindow()
     fig.canvas.set_window_title(filepath)
     plt.subplots_adjust(left=0, right=1, bottom=0.2)
 
