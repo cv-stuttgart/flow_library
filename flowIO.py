@@ -17,7 +17,7 @@ def readFlowFile(filepath):
     elif filepath.endswith(".png"):
         return readPngFlow(filepath)
     else:
-        print("Unknown file format for", filepath)
+        raise(f"readFlowFile: Unknown file format for {filepath}")
 
 
 def writeFlowFile(flow, filepath):
@@ -27,6 +27,8 @@ def writeFlowFile(flow, filepath):
         return writeFloFlow(flow, filepath)
     elif filepath.endswith(".png"):
         return writePngFlow(flow, filepath)
+    else:
+        raise(f"writeFlowFile: Unknown file format for {filepath}")
 
 
 def readMatFlow(filepath):
