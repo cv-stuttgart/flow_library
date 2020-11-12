@@ -183,6 +183,6 @@ def getKITTI15Test():
     result = {}
     for seq in range(200):
         seq_name = f"{seq:06d}"
-        images = [os.path.join(basepath, f"{seq_name}_{i}") for i in [10,11]]
+        images = [os.path.join(basepath, f"{seq_name}_{i}.png") for i in [10,11]]
         result[seq_name] = {"images": images}
     return result
