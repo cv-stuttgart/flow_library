@@ -2,6 +2,7 @@ import struct
 import numpy as np
 from scipy.io import loadmat
 import png
+import cv2
 
 
 def readFlowFile(filepath):
@@ -17,6 +18,15 @@ def readFlowFile(filepath):
         return readPngFlow(filepath)
     else:
         print("Unknown file format for", filepath)
+
+
+def writeFlowFile(flow, filepath):
+    """write optical flow to file. Supports ".flo" and ".png" (KITTI) file format.
+    """
+    if filepath.endswith(".flo"):
+        return writeFloFlow(flow, filepath)
+    elif filepath.endswith(".png"):
+        return writePngFlow(flow, filepath)
 
 
 def readMatFlow(filepath):
@@ -164,3 +174,10 @@ def writeFloFlow(flow, filename):
             result = f.write(struct.pack(f"{n}f", *data))
             if result != n * 4:
                 raise IOError(f"write flo file {filename}: problem writing row {i}")
+
+
+def writePngFlow(flow, filename):
+    flow = 64.0 * flow + 2**15
+    valid = np.ones([flow.shape[0], flow.shape[1], 1])
+    flow = np.concatenate([flow, valid], axis=-1).astype(np.uint16)
+    cv2.imwrite(filename, flow[..., ::-1])
