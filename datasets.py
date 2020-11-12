@@ -176,3 +176,13 @@ def getSintelTest(sintel_imagetype):
         for frame in sorted(os.listdir(sq_path)):
             result[sequence]["images"].append(os.path.join(sq_path, frame))
     return result
+
+def getKITTI15Test():
+    basepath = os.getenv("DATASETS", "")
+    basepath = os.path.join(basepath, "kitti15", "testing", "image_2")
+    result = {}
+    for seq in range(200):
+        seq_name = f"{seq:06d}"
+        images = [os.path.join(basepath, f"{seq_name}_{i}") for i in [10,11]]
+        result[seq_name] = {"images": images}
+    return result
