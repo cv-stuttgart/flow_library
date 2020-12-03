@@ -2,7 +2,6 @@ import struct
 import numpy as np
 from scipy.io import loadmat
 import png
-import cv2
 
 
 def readFlowFile(filepath):
@@ -180,6 +179,13 @@ def writeFloFlow(flow, filename):
 
 def writePngFlow(flow, filename):
     flow = 64.0 * flow + 2**15
-    valid = np.ones([flow.shape[0], flow.shape[1], 1])
-    flow = np.concatenate([flow, valid], axis=-1).astype(np.uint16)
-    cv2.imwrite(filename, flow[..., ::-1])
+    width = flow.shape[1]
+    height = flow.shape[0]
+    valid_map = np.ones([flow.shape[0], flow.shape[1], 1])
+    valid_map[np.isnan(flow[:,:,0]) | np.isnan(flow[:,:,1])] = 0
+    flow = np.nan_to_num(flow)
+    flow = np.concatenate([flow, valid_map], axis=-1).astype(np.uint16)
+    flow = np.reshape(flow, (-1, width*3))
+    with open(filename, "wb") as f:
+        writer = png.Writer(width=width, height=height, bitdepth=16, greyscale=False)
+        writer.write(f, flow)
