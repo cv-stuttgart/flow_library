@@ -117,7 +117,7 @@ def getAllErrorMeasures(flow, gt):
 
     # precompute EE
     ee = compute_EE(flow, gt)
-    for err, name in zip([compute_AEE, compute_BP, compute_BP_KITTI15], ["AEE", "BP", "Fl"]):
+    for err, name in zip([compute_AEE, compute_BP, compute_Fl], ["AEE", "BP", "Fl"]):
         result[name] = err(flow, gt, ee=ee)
     return result
 

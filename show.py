@@ -73,7 +73,7 @@ def showFlow(filepath):
         if gt:
             gt_flow = flowIO.readFlowFile(gt)
             errors = errormeasures.getAllErrorMeasures(flow, gt_flow)
-            fig.suptitle(f"AAE: {errors['AAE']:.3f}, AEE: {errors['AEE']:.3f}, BP: {errors['BP']:.3f}, BPKITTI: {errors['BPKITTI']:.3f}")
+            fig.suptitle(f"AEE: {errors['AEE']:.3f}, Fl: {errors['Fl']:.3f}")
         colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=slider.val, gt=gt_flow)
         ax_implot.set_data(colorvis)
         fig.canvas.draw_idle()

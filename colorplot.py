@@ -161,10 +161,12 @@ def flow_to_color(flow):
     """
     # adapted from https://github.com/tomrunia/OpticalFlow_Visualization
 
-    # TODO: fails for nan values
-
     assert flow.ndim == 3, 'input flow must have three dimensions'
     assert flow.shape[2] == 2, 'input flow must have shape [H,W,2]'
+
+    nan = np.isnan(flow[:, :, 0]) | np.isnan(flow[:, :, 1])
+    flow[nan, :] = 0
+
     u = flow[:,:,0]
     v = flow[:,:,1]
     # scale flow by maxvalue
@@ -193,4 +195,5 @@ def flow_to_color(flow):
         col[idx]  = 1 - rad[idx] * (1-col[idx])
         col[~idx] = col[~idx] * 0.75   # out of range
         flow_image[:,:,i] = np.floor(255 * col)
+        flow_image[nan, i] = 0
     return flow_image
