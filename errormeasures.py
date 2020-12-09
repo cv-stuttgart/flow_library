@@ -40,7 +40,7 @@ def compute_EE(flow, gt):
 
 
 def compute_AEE(flow, gt, ee=None):
-    """compute the average endpoint error (AEE) between the estimated flow field and the groundtruth flow field
+    """compute the average endpoint error (AEE, sometimes also EPE) between the estimated flow field and the groundtruth flow field
     flow: estimated flow
     gt: groundtruth flow
     ee: precomputed endpoint error
@@ -56,7 +56,7 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None):
     The bad pixel error is defined as the percentage of valid pixels.
     Valid pixel are generally defined as those whose endpoint is smaller than 3px.
     An extension to this definition used for the KITTI15 dataset is that a pixel is valid if
-    the endpoint error is smaller than 3px OR the is less than 5% of the groundtruth vector length.
+    the endpoint error is smaller than 3px OR less than 5% of the groundtruth vector length.
     This extension has an influence if the groundtruth vector lenth is > 60px.
     flow: estimated flow
     gt: groundtruth flow
@@ -85,27 +85,50 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None):
     return 100 * np.sum(bp_mask) / count
 
 
-def compute_BP_KITTI15(flow, gt, ee=None):
+def compute_Fl(flow, gt, ee=None):
+    """compute the bad pixel error (Fl) between the estimated flow field and the groundtruth flow field.
+    The bad pixel error is defined as the percentage of valid pixels.
+    Valid pixel are defined as those whose endpoint is smaller than 3px OR less than 5% of the groundtruth vector length.
+    flow: estimated flow
+    gt: groundtruth flow
+    ee: precomputed endpoint error
+    return: Fl error as percentage [0;100]
+    """
     return compute_BP(flow, gt, useKITTI15=True, ee=ee)
 
 
 def printAllErrorMeasures(flow, gt):
-    for err, name in zip([compute_AAE, compute_AEE, compute_BP], ["AAE", "AEE", "BP"]):
+    """print the AAE, AEE, BP and Fl error measures
+    flow: estimated flow
+    gt: groundtruth flow
+    """
+    for err, name in zip([compute_AAE, compute_AEE, compute_BP, compute_Fl], ["AAE", "AEE", "BP", "Fl"]):
         print(f"{name:3s}: {err(flow,gt):.2f}")
 
 
 def getAllErrorMeasures(flow, gt):
+    """create a dictionary with the AAE, AEE, BP and Fl error measures
+    flow: estimated flow
+    gt: groundtruth flow
+    return: dictionary with keys AAE, AEE, BP, Fl and error values
+    """
     result = {}
     result["AAE"] = compute_AAE(flow, gt)
 
     # precompute EE
     ee = compute_EE(flow, gt)
-    for err, name in zip([compute_AEE, compute_BP, compute_BP_KITTI15], ["AEE", "BP", "BPKITTI"]):
+    for err, name in zip([compute_AEE, compute_BP, compute_BP_KITTI15], ["AEE", "BP", "Fl"]):
         result[name] = err(flow, gt, ee=ee)
     return result
 
 
 def getAllErrorMeasures_area(flow, gt, area):
+    """compute all error measures only for a certain area of pixels and return them as a dict
+    flow: estimated flow
+    gt: groundtruth flow
+    area: boolean array determining the evaluation area
+    return: dictionary with keys AAE, AEE, BP, Fl and error values
+    """
     gt_area = gt.copy()
     gt_area[np.invert(area)] = np.nan
     return getAllErrorMeasures(flow, gt_area)
