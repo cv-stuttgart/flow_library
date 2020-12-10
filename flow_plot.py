@@ -52,7 +52,7 @@ def colorplot_dark(flow, auto_scale=True, max_scale=-1, transform=None, return_m
         return rgb
 
 
-def colorplot_light(flow):
+def colorplot_light(flow, auto_scale=True, max_scale=-1, return_max=False):
     """
     Expects a two dimensional flow image of shape.
     Args:
@@ -72,10 +72,11 @@ def colorplot_light(flow):
     v = flow[:,:,1]
     # scale flow by maxvalue
     rad = np.sqrt(np.square(u) + np.square(v))
-    rad_max = np.max(rad)
+    if auto_scale:
+        max_scale = rad.max()
     epsilon = 1e-5
-    u = u / (rad_max + epsilon)
-    v = v / (rad_max + epsilon)
+    u = u / (max_scale + epsilon)
+    v = v / (max_scale + epsilon)
 
     flow_image = np.zeros((u.shape[0], u.shape[1], 3), np.uint8)
     colorwheel = get_Middlebury_colorwheel()  # shape [55x3]
@@ -97,7 +98,10 @@ def colorplot_light(flow):
         col[~idx] = col[~idx] * 0.75   # out of range
         flow_image[:,:,i] = np.floor(255 * col)
         flow_image[nan, i] = 0
-    return flow_image
+    if return_max:
+        return flow_image, max_scale
+    else:
+        return flow_image
 
 
 def errorplot(flow, gt):

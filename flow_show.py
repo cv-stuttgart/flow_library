@@ -13,13 +13,15 @@ import datasets
 import flow_errors
 
 
-def getFlowVis(flow, vistype="Normal", auto_scale=False, max_scale=-1, gt=None):
-    if vistype == "Normal":
-        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, max_scale=max_scale)
-    elif vistype == "Log":
-        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, transform="log", max_scale=max_scale)
-    elif vistype == "LogLog":
-        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, transform="loglog", max_scale=max_scale)
+def getFlowVis(flow, vistype="Color Light", auto_scale=False, max_scale=-1, gt=None, return_max=False):
+    if vistype == "Color Light":
+        return flow_plot.colorplot_light(flow, auto_scale=auto_scale, max_scale=max_scale, return_max=return_max)
+    if vistype == "Color Dark":
+        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, max_scale=max_scale, return_max=return_max)
+    elif vistype == "Color Log":
+        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, transform="log", max_scale=max_scale, return_max=return_max)
+    elif vistype == "Color LogLog":
+        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, transform="loglog", max_scale=max_scale, return_max=return_max)
     elif vistype == "Error":
         if gt is None:
             return np.zeros((flow.shape[0], flow.shape[1]))
@@ -56,14 +58,14 @@ def showFlow(filepath):
     fig.canvas.set_window_title(filepath)
     plt.subplots_adjust(left=0, right=1, bottom=0.2)
 
-    rgb_vis, max_scale = getFlowVis(flow, auto_scale=True)
+    rgb_vis, max_scale = getFlowVis(flow, auto_scale=True, return_max=True)
     plt.axis("off")
     ax_implot = plt.imshow(rgb_vis, interpolation="nearest")
 
     axslider = plt.axes([0.05, 0.085, 0.6, 0.03])
     axbuttons = plt.axes([0.7, 0.005, 0.25, 0.195], frame_on=False, aspect='equal')
     slider = Slider(axslider, "max", valmin=0, valmax=200, valinit=max_scale, closedmin=False)
-    buttons = RadioButtons(axbuttons, ["Normal", "Log", "LogLog", "Error", "Error Fl"])
+    buttons = RadioButtons(axbuttons, ["Color Light", "Color Dark", "Color Log", "Color LogLog", "Error", "Error Fl"])
 
     def updateEverything():
         nonlocal flow
@@ -93,7 +95,7 @@ def showFlow(filepath):
 
         return 'x=%1.4f, y=%1.4f' % (x, y)
 
-    def keypress(event):
+    def key_press_event(event):
         nonlocal filepath
         if event.key not in ["left", "right"]:
             return
@@ -107,7 +109,7 @@ def showFlow(filepath):
 
     ax.format_coord = format_coord
 
-    fig.canvas.mpl_connect('key_press_event', keypress)
+    fig.canvas.mpl_connect('key_press_event', key_press_event)
     slider.on_changed(update)
     buttons.on_clicked(update)
 
@@ -119,3 +121,6 @@ def showFlow(filepath):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         showFlow(sys.argv[1])
+    else:
+        print(f"Usage:\n  {sys.argv[0]} <flowfile>")
+        sys.exit(1)
