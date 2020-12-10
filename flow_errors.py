@@ -57,7 +57,7 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None):
     Valid pixel are generally defined as those whose endpoint is smaller than 3px.
     An extension to this definition used for the KITTI15 dataset is that a pixel is valid if
     the endpoint error is smaller than 3px OR less than 5% of the groundtruth vector length.
-    This extension has an influence if the groundtruth vector lenth is > 60px.
+    This extension has an influence if the groundtruth vector length is > 60px.
     flow: estimated flow
     gt: groundtruth flow
     useKITTI15: boolean flag if the KITTI15 calculation method should be used (gives better results)

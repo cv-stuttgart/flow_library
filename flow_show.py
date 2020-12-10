@@ -1,34 +1,35 @@
 #! /usr/bin/python3
 
+import sys
+import os
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RadioButtons
 import numpy as np
 
-import colorplot
-import flowIO
+import flow_plot
+import flow_IO
 import datasets
-import errormeasures
-import sys
-import os
+import flow_errors
 
 
 def getFlowVis(flow, vistype="Normal", auto_scale=False, max_scale=-1, gt=None):
     if vistype == "Normal":
-        return colorplot.colorplot(flow, auto_scale=auto_scale, max_scale=max_scale)
+        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, max_scale=max_scale)
     elif vistype == "Log":
-        return colorplot.colorplot(flow, auto_scale=auto_scale, transform="log", max_scale=max_scale)
+        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, transform="log", max_scale=max_scale)
     elif vistype == "LogLog":
-        return colorplot.colorplot(flow, auto_scale=auto_scale, transform="loglog", max_scale=max_scale)
+        return flow_plot.colorplot_dark(flow, auto_scale=auto_scale, transform="loglog", max_scale=max_scale)
     elif vistype == "Error":
         if gt is None:
             return np.zeros((flow.shape[0], flow.shape[1]))
         else:
-            return colorplot.errorplot(flow, gt)
+            return flow_plot.errorplot(flow, gt)
     elif vistype == "Error Fl":
         if gt is None:
             return np.zeros((flow.shape[0], flow.shape[1]))
         else:
-            return colorplot.errorplot_Fl(flow, gt)
+            return flow_plot.errorplot_Fl(flow, gt)
 
 
 def maximizeWindow():
@@ -44,7 +45,7 @@ def maximizeWindow():
 
 
 def showFlow(filepath):
-    flow = flowIO.readFlowFile(filepath)
+    flow = flow_IO.readFlowFile(filepath)
     gt_flow = None
 
     dir_name = os.path.dirname(filepath)
@@ -68,11 +69,11 @@ def showFlow(filepath):
         nonlocal flow
         nonlocal gt_flow
         fig.canvas.set_window_title(filepath)
-        flow = flowIO.readFlowFile(filepath)
+        flow = flow_IO.readFlowFile(filepath)
         gt = datasets.findGroundtruth(filepath)
         if gt:
-            gt_flow = flowIO.readFlowFile(gt)
-            errors = errormeasures.getAllErrorMeasures(flow, gt_flow)
+            gt_flow = flow_IO.readFlowFile(gt)
+            errors = flow_errors.getAllErrorMeasures(flow, gt_flow)
             fig.suptitle(f"AEE: {errors['AEE']:.3f}, Fl: {errors['Fl']:.3f}")
         colorvis = getFlowVis(flow, vistype=buttons.value_selected, max_scale=slider.val, gt=gt_flow)
         ax_implot.set_data(colorvis)

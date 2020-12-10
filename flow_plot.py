@@ -1,10 +1,9 @@
 import matplotlib
 import numpy as np
-import math
-import errormeasures
+import flow_errors
 
 
-def colorplot(flow, max_scale=1, auto_scale=False, transform=None):
+def colorplot_dark(flow, auto_scale=True, max_scale=-1, transform=None, return_max=False):
     """
     color-codes a flow input using the color-coding by [Bruhn 2006]
     """
@@ -16,7 +15,7 @@ def colorplot(flow, max_scale=1, auto_scale=False, transform=None):
     if auto_scale:
         max_scale = flow_gradientmag.max()
 
-    hue = -np.arctan2(flow[:, :, 1], flow[:, :, 0]) % (2 * math.pi) / (2 * math.pi) * 360
+    hue = -np.arctan2(flow[:, :, 1], flow[:, :, 0]) % (2 * np.pi) / (2 * np.pi) * 360
     hue[hue < 90] *= 60 / 90
     hue[(hue < 180) & (hue >= 90)] = (hue[(hue < 180) & (hue >= 90)] - 90) * 60 / 90 + 60
     hue[hue >= 180] = (hue[hue >= 180] - 180) * 240 / 180 + 120
@@ -47,10 +46,58 @@ def colorplot(flow, max_scale=1, auto_scale=False, transform=None):
     # reset flow
     flow[nan, :] = np.nan
 
-    if auto_scale:
+    if return_max:
         return rgb, max_scale
     else:
         return rgb
+
+
+def colorplot_light(flow):
+    """
+    Expects a two dimensional flow image of shape.
+    Args:
+        flow_uv (np.ndarray): Flow UV image of shape [H,W,2]
+    Returns:
+        np.ndarray: Flow visualization image of shape [H,W,3]
+    """
+    # adapted from https://github.com/tomrunia/OpticalFlow_Visualization
+
+    assert flow.ndim == 3, 'input flow must have three dimensions'
+    assert flow.shape[2] == 2, 'input flow must have shape [H,W,2]'
+
+    nan = np.isnan(flow[:, :, 0]) | np.isnan(flow[:, :, 1])
+    flow[nan, :] = 0
+
+    u = flow[:,:,0]
+    v = flow[:,:,1]
+    # scale flow by maxvalue
+    rad = np.sqrt(np.square(u) + np.square(v))
+    rad_max = np.max(rad)
+    epsilon = 1e-5
+    u = u / (rad_max + epsilon)
+    v = v / (rad_max + epsilon)
+
+    flow_image = np.zeros((u.shape[0], u.shape[1], 3), np.uint8)
+    colorwheel = get_Middlebury_colorwheel()  # shape [55x3]
+    ncols = colorwheel.shape[0]
+    rad = np.sqrt(np.square(u) + np.square(v))
+    a = np.arctan2(-v, -u)/np.pi
+    fk = (a+1) / 2*(ncols-1)
+    k0 = np.floor(fk).astype(np.int32)
+    k1 = k0 + 1
+    k1[k1 == ncols] = 0
+    f = fk - k0
+    for i in range(colorwheel.shape[1]):
+        tmp = colorwheel[:,i]
+        col0 = tmp[k0] / 255.0
+        col1 = tmp[k1] / 255.0
+        col = (1-f)*col0 + f*col1
+        idx = (rad <= 1)
+        col[idx]  = 1 - rad[idx] * (1-col[idx])
+        col[~idx] = col[~idx] * 0.75   # out of range
+        flow_image[:,:,i] = np.floor(255 * col)
+        flow_image[nan, i] = 0
+    return flow_image
 
 
 def errorplot(flow, gt):
@@ -67,7 +114,7 @@ def errorplot(flow, gt):
         (np.inf, [165, 0, 38])
     ]
 
-    ee = errormeasures.compute_EE(flow, gt)
+    ee = flow_errors.compute_EE(flow, gt)
 
     nan = np.isnan(ee)
     ee = np.nan_to_num(ee)
@@ -83,7 +130,7 @@ def errorplot(flow, gt):
 
 
 def errorplot_Fl(flow, gt):
-    ee = errormeasures.compute_EE(flow, gt)
+    ee = flow_errors.compute_EE(flow, gt)
     nan = np.isnan(ee)
     ee = np.nan_to_num(ee)
     result = np.zeros((ee.shape[0], ee.shape[1], 3), dtype=int)
@@ -149,51 +196,3 @@ def get_Middlebury_colorwheel():
     colorwheel[col:col+MR, 2] = 255 - np.floor(255*np.arange(MR)/MR)
     colorwheel[col:col+MR, 0] = 255
     return colorwheel
-
-
-def flow_to_color(flow):
-    """
-    Expects a two dimensional flow image of shape.
-    Args:
-        flow_uv (np.ndarray): Flow UV image of shape [H,W,2]
-    Returns:
-        np.ndarray: Flow visualization image of shape [H,W,3]
-    """
-    # adapted from https://github.com/tomrunia/OpticalFlow_Visualization
-
-    assert flow.ndim == 3, 'input flow must have three dimensions'
-    assert flow.shape[2] == 2, 'input flow must have shape [H,W,2]'
-
-    nan = np.isnan(flow[:, :, 0]) | np.isnan(flow[:, :, 1])
-    flow[nan, :] = 0
-
-    u = flow[:,:,0]
-    v = flow[:,:,1]
-    # scale flow by maxvalue
-    rad = np.sqrt(np.square(u) + np.square(v))
-    rad_max = np.max(rad)
-    epsilon = 1e-5
-    u = u / (rad_max + epsilon)
-    v = v / (rad_max + epsilon)
-
-    flow_image = np.zeros((u.shape[0], u.shape[1], 3), np.uint8)
-    colorwheel = get_Middlebury_colorwheel()  # shape [55x3]
-    ncols = colorwheel.shape[0]
-    rad = np.sqrt(np.square(u) + np.square(v))
-    a = np.arctan2(-v, -u)/np.pi
-    fk = (a+1) / 2*(ncols-1)
-    k0 = np.floor(fk).astype(np.int32)
-    k1 = k0 + 1
-    k1[k1 == ncols] = 0
-    f = fk - k0
-    for i in range(colorwheel.shape[1]):
-        tmp = colorwheel[:,i]
-        col0 = tmp[k0] / 255.0
-        col1 = tmp[k1] / 255.0
-        col = (1-f)*col0 + f*col1
-        idx = (rad <= 1)
-        col[idx]  = 1 - rad[idx] * (1-col[idx])
-        col[~idx] = col[~idx] * 0.75   # out of range
-        flow_image[:,:,i] = np.floor(255 * col)
-        flow_image[nan, i] = 0
-    return flow_image
