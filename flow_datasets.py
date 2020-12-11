@@ -7,21 +7,25 @@ from itertools import chain
 SUPPORTED_DATASETS = ["middlebury", "kitti12", "kitti15", "mpi_sintel", "classroom", "viper"]
 
 
+def getSintelTrain(sintel_imagetype):
+    pass
+
+
 def getTrainDataset(dataset_name, kitti_flowtype="flow_noc", sintel_imagetype="final"):
     """List image file paths and groundtruth flow file paths for a dataset referenced by name.
     A prerequisite is that the datasets are in the correct folder structure:
-        The datasets folder is referenced using the environment variable $DATASETS.
-        Inside this folder the datasets "middlebury", "kitti12", "kitti15", "mpi_sintel", 
-        "classroom" or "viper" are in their respective folder.
-        For example:
-        $DATASETS
-            > kitti12
-                > testing
-                > training
-                    > flow_noc
-                    > flow_occ
-                    > image_0
-                    > image_1
+    The datasets folder is referenced using the environment variable $DATASETS.
+    Inside this folder the datasets "middlebury", "kitti12", "kitti15", "mpi_sintel", 
+    "classroom" or "viper" are in their respective folder.
+    For example:
+    $DATASETS
+        > kitti12
+            > testing
+            > training
+                > flow_noc
+                > flow_occ
+                > image_0
+                > image_1
 
     dataset_name: one of "middlebury", "kitti12", "kitti15", "mpi_sintel", "classroom" or "viper"
     [optional] kitti_flowtype: one of "flow_noc" or "flow_occ"
