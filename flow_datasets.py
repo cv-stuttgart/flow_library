@@ -1,11 +1,12 @@
 import os
 import re
-from glob import iglob
-from itertools import chain
 
 
 SUPPORTED_DATASETS = ["middlebury", "kitti12", "kitti15", "mpi_sintel"]
 SINTEL_TRAIN_SEQUENCES = ["alley_1", "alley_2", "ambush_2", "ambush_4", "ambush_5", "ambush_6", "ambush_7", "bamboo_1", "bamboo_2", "bandage_1", "bandage_2", "cave_2", "cave_4", "market_2", "market_5", "market_6", "mountain_1", "shaman_2", "shaman_3", "sleeping_1", "sleeping_2", "temple_2", "temple_3"]
+SINTEL_TEST_SEQUENCES = ["ambush_1", "ambush_3", "bamboo_3", "cave_3", "market_1", "market_4", "mountain_2", "PERTURBED_market_3", "PERTURBED_shaman_1", "temple_1", "tiger", "wall"]
+SINTEL_TEST_IMG_COUNTS = [23, 41, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50]
+
 
 def getSintelTrain(sintel_imagetype):
     """Get the MPI Sintel train dataset as a dictionary containing file paths.
@@ -71,7 +72,7 @@ def getTrainDataset(dataset_name, sintel_imagetype=None, kitti_flowtype="flow_oc
     dataset_basepath = os.getenv("DATASETS")
 
     if dataset_basepath is None:
-        raise ValueError(f"DATASET environment variable not given")
+        raise ValueError(f"DATASET environment variable not set")
 
     dataset_basepath = os.path.join(dataset_basepath, dataset_name)
 
@@ -174,57 +175,84 @@ def getTrainDataset(dataset_name, sintel_imagetype=None, kitti_flowtype="flow_oc
     return result
 
 
-def findGroundtruth(filepath):
-    sintel_seq = ["alley_1", "alley_2", "ambush_2", "ambush_4", "ambush_5", "ambush_6", "ambush_7", "bamboo_1", "bamboo_2", "bandage_1", "bandage_2", "cave_2", "cave_4", "market_2", "market_5", "market_6", "mountain_1", "shaman_2", "shaman_3", "sleeping_1", "sleeping_2", "temple_2", "temple_3"]
+def getSintelTestClean():
+    """Get the MPI Sintel test dataset as a dictionary containing image file paths.
+    The image pass "clean" is used.
+    """
+    return getSintelTest("clean")
 
-    sequence = None
-    for sq in sintel_seq:
-        if sq in filepath:
-            sequence = sq
 
-    if sequence is not None:
-        # might be sintel
-        m = re.search(r"frame_(\d\d\d\d)", filepath)
-        if m:
-            framenum = int(m.group(1))
-            try:
-                return getTrainDataset("mpi_sintel")[sequence]["flows"][framenum - 1]
-            except Exception as e:
-                print(e)
-    else:
-        # could be kitti
-        if "kitti15" in filepath.lower() or "kitti_15" in filepath.lower() or "kitti-15" in filepath.lower():
-            m = re.search(r"(\d\d\d\d\d\d)_10", filepath)
-            if m:
-                sequence = m.group(1)
-                try:
-                    return getTrainDataset("kitti15", kitti_flowtype="flow_occ")[sequence]["flows"][0]
-                except Exception as e:
-                    print(e)
-    return None
+def getSintelTestFinal():
+    """Get the MPI Sintel test dataset as a dictionary containing image file paths.
+    The image pass "final" is used.
+    """
+    return getSintelTest("final")
 
 
 def getSintelTest(sintel_imagetype):
-    assert(sintel_imagetype in ["clean", "final"])
-    basepath = os.getenv("DATASETS", "")
+    """Get the MPI Sintel test dataset as a dictionary containing image file paths.
+    sintel_imagetype: one of "clean" or "final
+    """
+    if sintel_imagetype not in ["clean", "final"]:
+        raise ValueError("sintel_imagetype must be clean or final!")
+
+    basepath = os.getenv("DATASETS")
+    if basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
     basepath = os.path.join(basepath, "mpi_sintel", "test", sintel_imagetype)
+
+    if not os.path.exists(basepath):
+        raise IOError("Path does not exist:", basepath)
+
     result = {}
-    for sequence in sorted(os.listdir(basepath)):
-        result[sequence] = {"images": []}
-        sq_path = os.path.join(basepath, sequence)
-        for frame in sorted(os.listdir(sq_path)):
-            result[sequence]["images"].append(os.path.join(sq_path, frame))
+    for i, sequence in enumerate(SINTEL_TEST_SEQUENCES):
+        result[sequence] = {"images": [], "flows": []}
+        end = SINTEL_TEST_IMG_COUNTS[i] + 1
+        for frame in range(1, end):
+            result[sequence]["images"].append(os.path.join(basepath, sequence, f"frame_{frame:04d}.png"))
     return result
 
 
 def getKITTI15Test():
-    basepath = os.getenv("DATASETS", "")
+    """Get the KITTI 15 test dataset as a dictionary containing image file paths.
+    """
+    basepath = os.getenv("DATASETS")
+
+    if basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
     basepath = os.path.join(basepath, "kitti15", "testing", "image_2")
+
+    if not os.path.exists(basepath):
+        raise IOError("Path does not exist:", basepath)
+
     result = {}
     for seq in range(200):
         seq_name = f"{seq:06d}"
         images = [os.path.join(basepath, f"{seq_name}_{i}.png") for i in [10,11]]
-        result[seq_name] = {"images": images}
+        result[seq_name] = {"images": images, "flows": []}
+    return result
+
+
+def getKITTI12Test():
+    """Get the KITTI 12 test dataset as a dictionary containing image file paths.
+    """
+    basepath = os.getenv("DATASETS")
+
+    if basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
+    basepath = os.path.join(basepath, "kitti12", "testing", "image_0")
+
+    if not os.path.exists(basepath):
+        raise IOError("Path does not exist:", basepath)
+
+    result = {}
+    for seq in range(195):
+        seq_name = f"{seq:06d}"
+        images = [os.path.join(basepath, f"{seq_name}_{i}.png") for i in [10,11]]
+        result[seq_name] = {"images": images, "flows": []}
     return result
 
 
@@ -242,6 +270,40 @@ def testDatasetCompleteness(dataset):
                 print("Image file does not exist", img)
 
 
+def findGroundtruth(filepath):
+    """Try to automatically find a ground truth flow file for a given filepath.
+    returns: path to groundtruth flow or None if not found
+    """
+    sequence = None
+    for sq in SINTEL_TRAIN_SEQUENCES:
+        if sq in filepath:
+            sequence = sq
+
+    if sequence is not None:
+        # might be sintel
+        m = re.search(r"frame_(\d\d\d\d)", filepath)
+        if m:
+            framenum = int(m.group(1))
+            return getSintelTrainClean()[sequence]["flows"][framenum - 1]
+
+    else:
+        # could be kitti 15
+        if "kitti15" in filepath.lower() or "kitti_15" in filepath.lower() or "kitti-15" in filepath.lower():
+            m = re.search(r"(\d\d\d\d\d\d)_10", filepath)
+            if m:
+                sequence = m.group(1)
+                return getKITTI15Train()[sequence]["flows"][0]
+
+        # could be kitti 12
+        if "kitti12" in filepath.lower() or "kitti_12" in filepath.lower() or "kitti-12" in filepath.lower():
+            m = re.search(r"(\d\d\d\d\d\d)_10", filepath)
+            if m:
+                sequence = m.group(1)
+                return getKITTI12Train()[sequence]["flows"][0]
+
+    return None
+
+
 if __name__ == "__main__":
     sintel_clean = getTrainDataset("mpi_sintel", sintel_imagetype="clean")
     testDatasetCompleteness(sintel_clean)
@@ -257,3 +319,15 @@ if __name__ == "__main__":
 
     middlebury = getTrainDataset("middlebury")
     testDatasetCompleteness(middlebury)
+
+    sintel_clean_test = getSintelTest("clean")
+    testDatasetCompleteness(sintel_clean_test)
+
+    sintel_final_test = getSintelTest("final")
+    testDatasetCompleteness(sintel_final_test)
+
+    kitti15_test = getKITTI15Test()
+    testDatasetCompleteness(kitti15_test)
+
+    kitti12_test = getKITTI12Test()
+    testDatasetCompleteness(kitti12_test)

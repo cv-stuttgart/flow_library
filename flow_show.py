@@ -9,7 +9,7 @@ import numpy as np
 
 import flow_plot
 import flow_IO
-import datasets
+import flow_datasets
 import flow_errors
 
 
@@ -72,7 +72,11 @@ def showFlow(filepath):
         nonlocal gt_flow
         fig.canvas.set_window_title(filepath)
         flow = flow_IO.readFlowFile(filepath)
-        gt = datasets.findGroundtruth(filepath)
+        gt = None
+        try:
+            gt = flow_datasets.findGroundtruth(filepath)
+        except Exception as e:
+            print(e)
         if gt:
             gt_flow = flow_IO.readFlowFile(gt)
             errors = flow_errors.getAllErrorMeasures(flow, gt_flow)
