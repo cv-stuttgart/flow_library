@@ -39,9 +39,10 @@ def colorplot_dark(flow, auto_scale=True, max_scale=-1, transform=None, return_m
     value[value > 1.0] = 1.0
     sat = np.ones((flow.shape[0], flow.shape[1]))
     hsv = np.stack((hue, sat, value), axis=-1)
-    rgb = matplotlib.colors.hsv_to_rgb(hsv)
+    rgb = matplotlib.colors.hsv_to_rgb(hsv) * 255
 
     rgb[nan, :] = 0
+    rgb = rgb.astype(np.uint8)
 
     # reset flow
     flow[nan, :] = np.nan
@@ -122,7 +123,7 @@ def errorplot(flow, gt):
 
     nan = np.isnan(ee)
     ee = np.nan_to_num(ee)
-    result = np.zeros((ee.shape[0], ee.shape[1], 3), dtype=int)
+    result = np.zeros((ee.shape[0], ee.shape[1], 3), dtype=np.uint8)
 
     for threshold, color in reversed(colors):
         result[ee < threshold, :] = color
@@ -137,7 +138,7 @@ def errorplot_Fl(flow, gt):
     ee = flow_errors.compute_EE(flow, gt)
     nan = np.isnan(ee)
     ee = np.nan_to_num(ee)
-    result = np.zeros((ee.shape[0], ee.shape[1], 3), dtype=int)
+    result = np.zeros((ee.shape[0], ee.shape[1], 3), dtype=np.uint8)
 
     abs_err = ee >= 3.0
 
