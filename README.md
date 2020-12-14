@@ -44,7 +44,7 @@ $DATASETS
 ```
 
 ## Optical Flow GUI
-To use the GUI, right-click an .flo or .png flow file and Choose `Open With` > `Other Application`.
+To use the GUI, right-click an .flo or .png flow file and choose `Open With` > `Other Application`.
 There, open the dialog to search for a custom executable, navigate to the `flow_library` folder and select `flow_show.py` (for Windows users: `flow_show.bat`)
 
 In the GUI, you can interactively select the scaling factor (default is the maximum flow vector length) and select the visualization type.
