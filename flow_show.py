@@ -36,7 +36,6 @@ def getFlowVis(flow, vistype="Color Light", auto_scale=False, max_scale=-1, gt=N
 
 def maximizeWindow():
     backend = plt.get_backend().lower()
-    print(backend)
     mng = plt.get_current_fig_manager()
     if backend == "tkagg":
         mng.window.state('zoomed')
