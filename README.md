@@ -15,7 +15,7 @@ Clone the repository and install the necessary requirements.
 In order to use this library, add it to the `PYTHONPATH` environment variable.
 
 ```console
-git clone git@github.com:cvis-stuttgart/flow_library.git
+git clone git@github.com:cv-stuttgart/flow_library.git
 cd flow_library
 pip install -r requirements.txt
 export PYTHONPATH=$PWD
