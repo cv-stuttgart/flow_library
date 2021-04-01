@@ -9,23 +9,20 @@ def colorplot(disp):
     h,w = disp.shape
     result = np.zeros((h,w,3),dtype=np.uint8)
 
-    disp /= np.nanmax(disp)
-    disp = np.clip(disp, 0, 1)
+    disp_ = disp / np.nanmax(disp)
+    disp_ = np.clip(disp_, 0, 1)
 
     for i in range(len(steps)-1):
         col1 = np.asarray(colors[i], dtype=np.uint8)
         col2 = np.asarray(colors[i+1], dtype=np.uint8)
-        alpha = (disp - steps[i]) / (steps[i+1]-steps[i])
+        alpha = (disp_ - steps[i]) / (steps[i+1]-steps[i])
         alpha = alpha[:,:,np.newaxis]
         interpol = ((1-alpha) * col1 + alpha*col2) * 255
-        result[(disp>steps[i]) & (disp<steps[i+1]),:] = np.asarray(np.floor(interpol), dtype=np.uint8)[(disp>steps[i]) & (disp<steps[i+1]),:]
+        result[(disp_>=steps[i]) & (disp_<steps[i+1]),:] = np.asarray(np.floor(interpol), dtype=np.uint8)[(disp_>=steps[i]) & (disp_<steps[i+1]),:]
 
     return result
 
-
-
-
-def colorplot2(disp):
+def colorplot_LEA(disp):
     """
     adapted from LEAStereo
     """

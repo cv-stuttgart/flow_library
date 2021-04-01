@@ -321,9 +321,9 @@ def readDispFile(filepath):
     elif filepath.endswith(".npy"):
         return readNpyFlow(filepath)
     elif filepath.endswith(".pfm"):
-        return readPfmFlow(filepath)
+        return readPfmDisp(filepath)
     else:
-        raise ValueError(f"readFlowFile: Unknown file format for {filepath}")
+        raise ValueError(f"readDispFile: Unknown file format for {filepath}")
 
 
 def readPngDisp(filepath):
