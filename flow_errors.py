@@ -72,11 +72,11 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None):
 
     # set the ee of nan pixels to zero
     ee = np.nan_to_num(ee, nan=0.0)
-    abs_err = ee >= 3.0
+    abs_err = ee > 3.0
 
     if useKITTI15:
-        gt_vec_length = np.sqrt(np.square(gt[..., 0]) + np.square(gt[..., 1]))
-        rel_err = ee >= 0.05 * gt_vec_length
+        gt_vec_length = np.nan_to_num(np.sqrt(np.square(gt[..., 0]) + np.square(gt[..., 1])), nan=0.0)
+        rel_err = ee > 0.05 * gt_vec_length
 
         bp_mask = abs_err & rel_err
     else:
