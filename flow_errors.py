@@ -132,3 +132,25 @@ def getAllErrorMeasures_area(flow, gt, area):
     gt_area = gt.copy()
     gt_area[np.invert(area)] = np.nan
     return getAllErrorMeasures(flow, gt_area)
+
+
+def compute_SF():
+    pass
+
+
+def compute_D1(disp, gt):
+
+    error = np.abs(disp-gt)
+    # number of valid pixels:
+    count = np.count_nonzero(~np.isnan(error))
+
+    # set the ee of nan pixels to zero
+    error = np.nan_to_num(error, nan=0.0)
+    abs_err = error > 3.0
+
+    rel_err = error > 0.05 * np.nan_to_num(gt, nan=0.0)
+
+    bp_mask = abs_err & rel_err
+
+    return 100 * np.sum(bp_mask) / count
+
