@@ -3,6 +3,7 @@ import numpy as np
 import png
 import re
 import sys
+from PIL import Image
 
 FLO_TAG_FLOAT = 202021.25  # first 4 bytes in flo file; check for this when READING the file
 FLO_TAG_STRING = "PIEH"    # first 4 bytes in flo file; use this when WRITING the file
@@ -355,3 +356,8 @@ def readPfmDisp(filepath):
     if len(disp.shape) != 2:
         raise IOError(f"read pfm disp: PFM file has wrong shape (assumed to be w x h): {disp.shape}")
     return disp
+
+
+def readKITTIObjMap(filepath):
+    assert filepath.endswith(".png")
+    return np.asarray(Image.open(filepath)) > 0

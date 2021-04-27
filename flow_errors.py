@@ -51,7 +51,7 @@ def compute_AEE(flow, gt, ee=None):
     return np.nansum(ee) / count
 
 
-def compute_BP(flow, gt, useKITTI15=False, ee=None):
+def compute_BP(flow, gt, useKITTI15=False, ee=None, return_mask=False):
     """compute the bad pixel error (BP) between the estimated flow field and the groundtruth flow field.
     The bad pixel error is defined as the percentage of valid pixels.
     Valid pixel are generally defined as those whose endpoint is smaller than 3px.
@@ -62,7 +62,8 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None):
     gt: groundtruth flow
     useKITTI15: boolean flag if the KITTI15 calculation method should be used (gives better results)
     ee: precomputed endpoint error
-    return: BP error as percentage [0;100]
+    return_mask: if True, return pixelwise boolean mask instead of aggregated number
+    return: BP error as percentage [0;100], or mask if return_mask is True
     """
     if ee is None:
         ee = compute_EE(flow, gt)
@@ -82,19 +83,23 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None):
     else:
         bp_mask = abs_err
 
-    return 100 * np.sum(bp_mask) / count
+    if return_mask:
+        return bp_mask
+    else:
+        return 100 * np.sum(bp_mask) / count
 
 
-def compute_Fl(flow, gt, ee=None):
+def compute_Fl(flow, gt, ee=None, return_mask=False):
     """compute the bad pixel error (Fl) between the estimated flow field and the groundtruth flow field.
     The bad pixel error is defined as the percentage of valid pixels.
     Valid pixel are defined as those whose endpoint is smaller than 3px OR less than 5% of the groundtruth vector length.
     flow: estimated flow
     gt: groundtruth flow
     ee: precomputed endpoint error
-    return: Fl error as percentage [0;100]
+    return_mask: if True, return pixelwise boolean mask instead of aggregated number
+    return: Fl error as percentage [0;100], or mask if return_mask is True
     """
-    return compute_BP(flow, gt, useKITTI15=True, ee=ee)
+    return compute_BP(flow, gt, useKITTI15=True, ee=ee, return_mask=return_mask)
 
 
 def printAllErrorMeasures(flow, gt):
@@ -134,13 +139,60 @@ def getAllErrorMeasures_area(flow, gt, area):
     return getAllErrorMeasures(flow, gt_area)
 
 
-def compute_SF():
-    pass
+def compute_SF(disp0, disp1, flow, gt_disp0, gt_disp1, gt_flow, return_all=False, eval_mask=None):
+    """
+    eval_mask: only evaluate at positions where wval_mask is True
+    """
+    valid = (~np.isnan(gt_disp0)) & (~np.isnan(gt_disp1)) & (~np.isnan(gt_flow[:,:,0])) & (~np.isnan(gt_flow[:,:,1]))
+    disp0_mask = compute_DisparityError(disp0, gt_disp0, return_mask=True)
+    disp1_mask = compute_DisparityError(disp1, gt_disp1, return_mask=True)
+    flow_mask = compute_Fl(flow, gt_flow, return_mask=True)
+
+    if eval_mask is not None:
+        valid = valid & eval_mask
+        disp0_mask = disp0_mask & eval_mask
+        disp1_mask = disp1_mask & eval_mask
+        flow_mask = flow_mask & eval_mask
+
+    bp_mask = disp0_mask | disp1_mask | flow_mask
+    bp_mask[~valid] = False
+    count = np.count_nonzero(valid)
+
+    sf = 100 * np.sum(bp_mask) / count
+
+    if return_all:
+        d1 = 100 * np.sum(disp0_mask) / np.count_nonzero(~np.isnan(gt_disp0))
+        d2 = 100 * np.sum(disp1_mask) / np.count_nonzero(~np.isnan(gt_disp1))
+        fl = 100 * np.sum(flow_mask) / np.count_nonzero(~(np.isnan(gt_flow[:,:,0]) | np.isnan(gt_flow[:,:,1])))
+        return d1, d2, fl, sf
+    return sf
 
 
-def compute_D1(disp, gt):
+def compute_SF_full(estimate, gt_noc, gt_occ, object_map, return_list=False):
+    disp0, disp1, flow = estimate
+    if return_list:
+        output = []
+    else:
+        output = {}
+    for obj, obj_name in zip([object_map, ~object_map, None], ["fg", "bg", "all"]):
+        if not return_list:
+            output[obj_name] = {}
+        for occlusion, occ_name in zip([gt_noc, gt_occ], ["noc", "occ"]):
+            if not return_list:
+                output[obj_name][occ_name] = {}
+            gt_disp_0, gt_disp_1, gt_flow = occlusion
+            d1, d2, fl, sf = compute_SF(disp0, disp1, flow, gt_disp_0, gt_disp_1, gt_flow, return_all=True, eval_mask=obj)
+            for e, n in zip([d1, d2, fl, sf], ["d1", "d2", "fl", "sf"]):
+                if return_list:
+                    output.append(e)
+                else:
+                    output[obj_name][occ_name][n] = e
 
-    error = np.abs(disp-gt)
+    return output
+
+
+def compute_DisparityError(disp, gt, return_mask=False):
+    error = np.abs(disp - gt)
     # number of valid pixels:
     count = np.count_nonzero(~np.isnan(error))
 
@@ -152,5 +204,8 @@ def compute_D1(disp, gt):
 
     bp_mask = abs_err & rel_err
 
-    return 100 * np.sum(bp_mask) / count
+    if return_mask:
+        return bp_mask
+    else:
+        return 100 * np.sum(bp_mask) / count
 

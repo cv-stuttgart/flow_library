@@ -1,5 +1,9 @@
 import os
 import re
+import flow_IO
+import flow_errors
+import numpy as np
+import multiprocessing
 
 
 SUPPORTED_DATASETS = ["middlebury", "kitti12", "kitti15", "mpi_sintel"]
@@ -302,6 +306,63 @@ def findGroundtruth(filepath):
                 return getKITTI12Train()[sequence]["flows"][0]
 
     return None
+
+
+def getGroundTruthSF_KITTI(i):
+    dataset_basepath = os.getenv("DATASETS")
+
+    if dataset_basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
+    dataset_basepath = os.path.join(dataset_basepath, "kitti15", "training")
+    # groundtruth
+    disp_noc_0 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_noc_0", f"{i:06d}_10.png"))
+    disp_noc_1 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_noc_1", f"{i:06d}_10.png"))
+    flow_noc = flow_IO.readFlowFile(os.path.join(dataset_basepath, "flow_noc", f"{i:06d}_10.png"))
+    disp_occ_0 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_occ_0", f"{i:06d}_10.png"))
+    disp_occ_1 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_occ_1", f"{i:06d}_10.png"))
+    flow_occ = flow_IO.readFlowFile(os.path.join(dataset_basepath, "flow_occ", f"{i:06d}_10.png"))
+    # object map (fg/bg)
+    obj_map = flow_IO.readKITTIObjMap(os.path.join(dataset_basepath,"obj_map", f"{i:06d}_10.png"))
+    return (disp_noc_0, disp_noc_1, flow_noc), (disp_occ_0, disp_occ_1, flow_occ), obj_map
+
+
+def evaluateSF_KITTI_seq(basepath, seqnum):
+    disp_0 = flow_IO.readDispFile(os.path.join(basepath,"disp_0", f"{seqnum:06d}_10.png"))
+    disp_1 = flow_IO.readDispFile(os.path.join(basepath,"disp_1", f"{seqnum:06d}_10.png"))
+    flow = flow_IO.readFlowFile(os.path.join(basepath, "flow", f"{seqnum:06d}_10.png"))
+    gt_noc, gt_occ, obj_map = getGroundTruthSF_KITTI(seqnum)
+    e = flow_errors.compute_SF_full((disp_0, disp_1, flow), gt_noc, gt_occ, obj_map, return_list=True)
+    #print(e)
+    return e
+
+
+def evaluateSF_KITTI(folderpath):
+    assert os.path.exists(os.path.join(folderpath, "disp_0"))
+    assert os.path.exists(os.path.join(folderpath, "disp_1"))
+    assert os.path.exists(os.path.join(folderpath, "flow"))
+
+    dataset_basepath = os.getenv("DATASETS")
+
+    if dataset_basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
+    dataset_basepath = os.path.join(dataset_basepath, "kitti15", "training")
+
+    errors = []
+
+    # for i in range(200):
+    #     errors.append(evaluateSF_KITTI_seq(folderpath, i))
+
+    with multiprocessing.Pool(15) as p:
+        args = [(folderpath, i) for i in range(200)]
+        errors = p.starmap(evaluateSF_KITTI_seq, args)
+
+
+    errors = np.asarray(errors)
+    errors = np.average(errors, axis=0)
+    print(errors)
+
 
 
 if __name__ == "__main__":
