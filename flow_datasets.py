@@ -327,6 +327,16 @@ def getGroundTruthSF_KITTI(i):
     return (disp_noc_0, disp_noc_1, flow_noc), (disp_occ_0, disp_occ_1, flow_occ), obj_map
 
 
+def getIntrinsics_KITTI(i, type="training"):
+    dataset_basepath = os.getenv("DATASETS")
+
+    if dataset_basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
+    dataset_basepath = os.path.join(dataset_basepath, "kitti15", type)
+    return flow_IO.readKITTIIntrinsics(os.path.join(dataset_basepath, "calib_cam_to_cam", f"{i:06d}.txt"))
+
+
 def evaluateSF_KITTI_seq(basepath, seqnum):
     disp_0 = flow_IO.readDispFile(os.path.join(basepath,"disp_0", f"{seqnum:06d}_10.png"))
     disp_1 = flow_IO.readDispFile(os.path.join(basepath,"disp_1", f"{seqnum:06d}_10.png"))

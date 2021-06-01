@@ -3,6 +3,7 @@ import numpy as np
 import png
 import re
 import sys
+import csv
 from PIL import Image
 
 FLO_TAG_FLOAT = 202021.25  # first 4 bytes in flo file; check for this when READING the file
@@ -361,3 +362,15 @@ def readPfmDisp(filepath):
 def readKITTIObjMap(filepath):
     assert filepath.endswith(".png")
     return np.asarray(Image.open(filepath)) > 0
+
+
+def readKITTIIntrinsics(filepath):
+    assert filepath.endswith(".txt")
+
+    with open(filepath) as f:
+        reader = csv.reader(f, delimiter=' ')
+        for row in reader:
+            if row[0] == 'K_02:':
+                K = np.array(row[1:], dtype=np.float32).reshape(3,3)
+                kvec = np.array([K[0,0], K[1,1], K[0,2], K[1,2]])
+                return kvec
