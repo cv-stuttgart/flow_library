@@ -327,14 +327,14 @@ def getGroundTruthSF_KITTI(i):
     return (disp_noc_0, disp_noc_1, flow_noc), (disp_occ_0, disp_occ_1, flow_occ), obj_map
 
 
-def getIntrinsics_KITTI(i, type="training"):
+def getIntrinsics_KITTI(i, mode="training", image=2):
     dataset_basepath = os.getenv("DATASETS")
 
     if dataset_basepath is None:
         raise ValueError(f"DATASET environment variable not set")
 
-    dataset_basepath = os.path.join(dataset_basepath, "kitti15", type)
-    return flow_IO.readKITTIIntrinsics(os.path.join(dataset_basepath, "calib_cam_to_cam", f"{i:06d}.txt"))
+    dataset_basepath = os.path.join(dataset_basepath, "kitti15", mode)
+    return flow_IO.readKITTIIntrinsics(os.path.join(dataset_basepath, "calib_cam_to_cam", f"{i:06d}.txt"), image=image)
 
 
 def evaluateSF_KITTI_seq(basepath, seqnum):
@@ -373,6 +373,54 @@ def evaluateSF_KITTI(folderpath):
     errors = np.average(errors, axis=0)
     print(errors)
 
+
+def sf_findCorrespondingFiles(filepath):
+    if not os.path.exists(filepath) or not os.path.isfile(filepath):
+        raise IOError(f"file path {filepath} not found!")
+
+    filepath = os.path.abspath(filepath)
+
+    parts = filepath.split(os.path.sep)
+
+    if len(parts) < 2:
+        raise ValueError(f"path has nor enough parents: {filepath}")
+
+    flowpath = None
+    disp0path = None
+    disp1path = None
+
+    if parts[-2] in ["flow", "disp_0", "disp_1"]:
+        parts[-2] = "flow"
+        flowpath = os.path.sep.join(parts)
+        parts[-2] = "disp_0"
+        disp0path = os.path.sep.join(parts)
+        parts[-2] = "disp_1"
+        disp1path = os.path.sep.join(parts)
+    elif parts[-2] in ["flow_noc", "disp_noc_0", "disp_noc_1"]:
+        parts[-2] = "flow_noc"
+        flowpath = os.path.sep.join(parts)
+        parts[-2] = "disp_noc_0"
+        disp0path = os.path.sep.join(parts)
+        parts[-2] = "disp_noc_1"
+        disp1path = os.path.sep.join(parts)
+    elif parts[-2] in ["flow_occ", "disp_occ_0", "disp_occ_1"]:
+        parts[-2] = "flow_occ"
+        flowpath = os.path.sep.join(parts)
+        parts[-2] = "disp_occ_0"
+        disp0path = os.path.sep.join(parts)
+        parts[-2] = "disp_occ_1"
+        disp1path = os.path.sep.join(parts)
+    else:
+        raise IOError(f"Could not find corresponding files to {filepath} --> {parts[-2]} does not fit!")
+    
+    if not os.path.exists(flowpath):
+        raise IOError(f"Corresponding flow path does not exist: {flowpath}")
+    if not os.path.exists(disp0path):
+        raise IOError(f"Corresponding disp0 path does not exist: {disp0path}")
+    if not os.path.exists(disp1path):
+        raise IOError(f"Corresponding disp1 path does not exist: {disp1path}")
+    
+    return disp0path, disp1path, flowpath
 
 
 if __name__ == "__main__":

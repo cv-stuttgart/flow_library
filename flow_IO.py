@@ -50,7 +50,7 @@ def writeFlowFile(flow, filepath):
     elif filepath.endswith(".png"):
         return writePngFlow(flow, filepath)
     elif filepath.endswith(".npy"):
-        return writeNpyFlow(flow, filepath)
+        return writeNpyFile(flow, filepath)
     else:
         raise ValueError(f"writeFlowFile: Unknown file format for {filepath}")
 
@@ -214,12 +214,12 @@ def readNpyFlow(filepath):
     return np.load(filepath)
 
 
-def writeNpyFlow(flow, filepath):
+def writeNpyFile(arr, filepath):
     """write numpy array to file.
-    flow: flow as numpy array to write
+    arr: numpy array to write
     filepath: file to write to
     """
-    np.save(filepath, flow)
+    np.save(filepath, arr)
 
 
 def readPfmFlow(filepath):
@@ -359,18 +359,53 @@ def readPfmDisp(filepath):
     return disp
 
 
+def writePngDisp(disp, filepath):
+    """write disparity to png file format as used in the KITTI 12 (Geiger et al., 2012) and KITTI 15 (Menze et al., 2015) dataset.
+    disp: disparity in shape height x width, invalid values should be represented as np.nan
+    filepath: path to file where to write to
+    """
+    disp = 256 * disp
+    width = disp.shape[1]
+    height = disp.shape[0]
+    disp = np.nan_to_num(disp).astype(np.uint16)
+    disp = np.reshape(disp, (-1, width))
+    with open(filepath, "wb") as f:
+        writer = png.Writer(width=width, height=height, bitdepth=16, greyscale=True)
+        writer.write(f, disp)
+
+
+def writeDispFile(disp, filepath):
+    """write disparity to file. Supports png (KITTI) and npy (numpy) file format.
+    disp: disparity with shape height x width. Invalid values should be represented as np.nan
+    filepath: file path where to write the flow
+    """
+    if not filepath:
+        raise ValueError("writeDispFile: empty filepath")
+
+    if len(disp.shape) != 2:
+        raise IOError(f"writeDispFile {filepath}: expected shape height x width but received {disp.shape}")
+
+    if disp.shape[0] > disp.shape[1]:
+        print(f"writeDispFile {filepath}: Warning: Are you writing an upright image? Expected shape height x width, got {disp.shape}")
+    
+    if filepath.endswith(".png"):
+        writePngDisp(disp, filepath)
+    elif filepath.endswith(".npy"):
+        writeNpyFile(disp, filepath)
+
+
 def readKITTIObjMap(filepath):
     assert filepath.endswith(".png")
     return np.asarray(Image.open(filepath)) > 0
 
 
-def readKITTIIntrinsics(filepath):
+def readKITTIIntrinsics(filepath, image=2):
     assert filepath.endswith(".txt")
 
     with open(filepath) as f:
         reader = csv.reader(f, delimiter=' ')
         for row in reader:
-            if row[0] == 'K_02:':
+            if row[0] == f'K_{image:02d}:':
                 K = np.array(row[1:], dtype=np.float32).reshape(3,3)
                 kvec = np.array([K[0,0], K[1,1], K[0,2], K[1,2]])
                 return kvec
