@@ -76,6 +76,11 @@ def colorplot_LEA(disp):
     plt.show()
 
 
+def colorplot_plasma(disp):
+    plt.imshow(disp, cmap="plasma")
+    plt.show()
+
+
 def get_color_map():
     return   np.array([[0.18995,0.07176,0.23217],
                        [0.19483,0.08339,0.26149],

@@ -30,7 +30,7 @@ def inv_project(depths, intrinsics):
     return np.stack([X, Y, Z], axis=-1)
 
 
-def backproject_flow3d(flow2d, depth0, depth1, intrinsics, T=None):
+def backproject_flow3d(flow2d, depth0, depth1, intrinsics, T=None, return_2d=False):
     """ compute 3D flow from 2D flow + depth change """
 
     ht, wd = flow2d.shape[0:2]
@@ -64,7 +64,35 @@ def backproject_flow3d(flow2d, depth0, depth1, intrinsics, T=None):
 
     flow3d = point1-point0
 
-    return flow3d
+    if not return_2d:
+        return flow3d
+
+    x0 = project(point0, intrinsics)
+    x1 = project(point1, intrinsics)
+
+    flow2d = x1-x0
+
+    return flow3d, flow2d
+
+
+def undo_motioncompensation(flow3d, depth, intrinsics, T):
+    X0 = inv_project(depth, intrinsics)
+    X1 = X0 + flow3d
+
+    ht, wd, _ = X1.shape
+    point1_hom = np.dstack((X1, np.ones((ht,wd))))
+    point1_hom[:,:,:3] *= 0.1
+    point1_hom = np.einsum('ijk,lk->ijl', point1_hom, T)
+    point1_hom[:,:,:3] /= 0.1
+    X1 = point1_hom[:,:,:3] / point1_hom[:,:,3, np.newaxis]
+
+    return X1 - X0
+
+
+def getFlow3D(disp0, disp1, flow, intrinsics):
+    depth0 = intrinsics[0] / disp0
+    depth1 = intrinsics[0] / disp1
+    return backproject_flow3d(flow, depth0, depth1, intrinsics)
 
 
 def induced_flow(flow3d, depth, intrinsics, min_depth=0.1, T=None):
