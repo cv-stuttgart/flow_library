@@ -5,6 +5,7 @@ import re
 SUPPORTED_DATASETS = ["middlebury", "kitti12", "kitti15", "mpi_sintel"]
 SINTEL_TRAIN_SEQUENCES = ["alley_1", "alley_2", "ambush_2", "ambush_4", "ambush_5", "ambush_6", "ambush_7", "bamboo_1", "bamboo_2", "bandage_1", "bandage_2", "cave_2", "cave_4", "market_2", "market_5", "market_6", "mountain_1", "shaman_2", "shaman_3", "sleeping_1", "sleeping_2", "temple_2", "temple_3"]
 SINTEL_TEST_SEQUENCES = ["ambush_1", "ambush_3", "bamboo_3", "cave_3", "market_1", "market_4", "mountain_2", "PERTURBED_market_3", "PERTURBED_shaman_1", "temple_1", "tiger", "wall"]
+SINTEL_TRAIN_IMG_COUNTS = [50, 50, 21, 33, 50, 20, 50, 50, 50, 50, 50, 50, 50, 50, 50, 40, 50, 50, 50, 50, 50, 50, 50]
 SINTEL_TEST_IMG_COUNTS = [23, 41, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50]
 
 
