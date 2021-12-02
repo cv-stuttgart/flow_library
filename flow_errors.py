@@ -139,33 +139,25 @@ def getAllErrorMeasures_area(flow, gt, area):
     return getAllErrorMeasures(flow, gt_area)
 
 
-def compute_SF(disp0, disp1, flow, gt_disp0, gt_disp1, gt_flow, return_all=False, eval_mask=None):
-    """
-    eval_mask: only evaluate at positions where wval_mask is True
-    """
-    valid = (~np.isnan(gt_disp0)) & (~np.isnan(gt_disp1)) & (~np.isnan(gt_flow[:,:,0])) & (~np.isnan(gt_flow[:,:,1]))
+def compute_SF(disp0, disp1, flow, gt_disp0, gt_disp1, gt_flow, return_all=False):
     disp0_mask = compute_DisparityError(disp0, gt_disp0, return_mask=True)
     disp1_mask = compute_DisparityError(disp1, gt_disp1, return_mask=True)
     flow_mask = compute_Fl(flow, gt_flow, return_mask=True)
 
-    if eval_mask is not None:
-        valid = valid & eval_mask
-        disp0_mask = disp0_mask & eval_mask
-        disp1_mask = disp1_mask & eval_mask
-        flow_mask = flow_mask & eval_mask
+    valid = (~np.isnan(gt_disp0)) & (~np.isnan(gt_disp1)) & (~np.isnan(gt_flow[:,:,0])) & (~np.isnan(gt_flow[:,:,1]))
+    sf_mask = disp0_mask | disp1_mask | flow_mask
+    sf_mask[~valid] = False
 
-    bp_mask = disp0_mask | disp1_mask | flow_mask
-    bp_mask[~valid] = False
-    count = np.count_nonzero(valid)
+    d1_badcount = disp0_mask.sum()
+    d1_pxcount = np.count_nonzero(~np.isnan(gt_disp0))
+    d2_badcount = disp1_mask.sum()
+    d2_pxcount = np.count_nonzero(~np.isnan(gt_disp1))
+    fl_badcount = flow_mask.sum()
+    fl_pxcount = np.count_nonzero(~(np.isnan(gt_flow[:,:,0]) | np.isnan(gt_flow[:,:,1])))
+    sf_badcount = sf_mask.sum()
+    sf_pxcount = np.count_nonzero(valid)
 
-    sf = 100 * np.sum(bp_mask) / count
-
-    if return_all:
-        d1 = 100 * np.sum(disp0_mask) / np.count_nonzero(~np.isnan(gt_disp0))
-        d2 = 100 * np.sum(disp1_mask) / np.count_nonzero(~np.isnan(gt_disp1))
-        fl = 100 * np.sum(flow_mask) / np.count_nonzero(~(np.isnan(gt_flow[:,:,0]) | np.isnan(gt_flow[:,:,1])))
-        return d1, d2, fl, sf
-    return sf
+    return d1_badcount, d1_pxcount, d2_badcount, d2_pxcount, fl_badcount, fl_pxcount, sf_badcount, sf_pxcount
 
 
 def compute_SF_full(estimate, gt_noc, gt_occ, object_map, return_list=False):
