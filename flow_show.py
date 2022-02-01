@@ -46,6 +46,7 @@ def maximizeWindow():
 
 
 def showFlow(filepath):
+    filepath = os.path.abspath(filepath)
     flow = flow_IO.readFlowFile(filepath)
     gt_flow = None
 
