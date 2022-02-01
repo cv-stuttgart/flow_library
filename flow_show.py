@@ -41,7 +41,7 @@ def maximizeWindow():
         mng.window.state('zoomed')
     elif backend == "wxagg":
         mng.frame.Maximize(True)
-    elif backend == "qt4agg" or backend == "qt5agg":
+    elif backend == "qt4agg" or backend == "qt5agg" or backend == "qtagg":
         mng.window.showMaximized()
 
 
@@ -54,7 +54,7 @@ def showFlow(filepath):
 
     fig, ax = plt.subplots()
     maximizeWindow()
-    fig.canvas.set_window_title(filepath)
+    plt.get_current_fig_manager().set_window_title(filepath)
     plt.subplots_adjust(left=0, right=1, bottom=0.2)
 
     rgb_vis, max_scale = getFlowVis(flow, auto_scale=True, return_max=True)
@@ -69,7 +69,7 @@ def showFlow(filepath):
     def updateEverything():
         nonlocal flow
         nonlocal gt_flow
-        fig.canvas.set_window_title(filepath)
+        plt.get_current_fig_manager().set_window_title(filepath)
         flow = flow_IO.readFlowFile(filepath)
         gt = None
         try:
