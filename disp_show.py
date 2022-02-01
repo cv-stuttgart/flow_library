@@ -24,6 +24,7 @@ def maximizeWindow():
 
 
 def showDisp(filepath):
+    filepath = os.path.abspath(filepath)
     disp = flow_IO.readDispFile(filepath)
 
     dir_name = os.path.dirname(filepath)
