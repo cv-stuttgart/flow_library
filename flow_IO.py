@@ -369,6 +369,7 @@ def writePngDisp(disp, filepath):
     disp = 256 * disp
     width = disp.shape[1]
     height = disp.shape[0]
+    disp = np.clip(disp, 0, 2**16-1)
     disp = np.nan_to_num(disp).astype(np.uint16)
     disp = np.reshape(disp, (-1, width))
     with open(filepath, "wb") as f:
