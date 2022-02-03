@@ -199,7 +199,9 @@ def writePngFlow(flow, filename):
     valid_map = np.ones([flow.shape[0], flow.shape[1], 1])
     valid_map[np.isnan(flow[:,:,0]) | np.isnan(flow[:,:,1])] = 0
     flow = np.nan_to_num(flow)
-    flow = np.concatenate([flow, valid_map], axis=-1).astype(np.uint16)
+    flow = np.concatenate([flow, valid_map], axis=-1)
+    flow = np.clip(flow, 0, 2**16-1)
+    flow = flow.astype(np.uint16)
     flow = np.reshape(flow, (-1, width*3))
     with open(filename, "wb") as f:
         writer = png.Writer(width=width, height=height, bitdepth=16, greyscale=False)
