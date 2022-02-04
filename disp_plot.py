@@ -10,6 +10,8 @@ def colorplot(disp, scale=None):
     initial_steps = [114, 185, 114, 174, 114, 185, 114]
     colors = [[0,0,0], [0,0,1], [1,0,0], [1,0,1], [0,1,0], [0,1,1], [1,1,0], [1,1,1]]
     steps = [0.0] + [sum(initial_steps[:i+1]) / float(sum(initial_steps)) for i in range(7)]
+    # make sure that disp=256 is also colored
+    steps[-1] += 0.0001
 
     h,w = disp.shape
     result = np.zeros((h,w,3),dtype=np.uint8)
