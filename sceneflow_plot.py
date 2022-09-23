@@ -4,8 +4,8 @@ from flow_utils import inv_project, backproject_flow3d
 import matplotlib.pyplot as plt
 
 
-def sceneflow_plot3D(disp_0, disp_1, flow, intrinsics, image1=None, crop_top=0, T=None):
-    pcl, line_set = getPointCloud(disp_0, disp_1, flow, intrinsics, image1=image1, crop_top=crop_top, T=T)
+def sceneflow_plot3D(disp_0, disp_1, flow, intrinsics, image1=None, crop_top=0):
+    pcl, line_set = getPointCloud(disp_0, disp_1, flow, intrinsics, image1=image1, crop_top=crop_top)
 
     vis = o3d.visualization.Visualizer()
     vis.create_window()
@@ -17,7 +17,7 @@ def sceneflow_plot3D(disp_0, disp_1, flow, intrinsics, image1=None, crop_top=0, 
     vis.destroy_window()
 
 
-def getPointCloud(disp_0, disp_1, flow, intrinsics, image1=None, crop_top=0, T=None):
+def getPointCloud(disp_0, disp_1, flow, intrinsics, image1=None, crop_top=0):
     if image1 is not None:
         image1 = np.asarray(image1, dtype=np.float64)
         image1 /= 255.0
@@ -32,34 +32,6 @@ def getPointCloud(disp_0, disp_1, flow, intrinsics, image1=None, crop_top=0, T=N
     points2_3D = points1_3D + flow_3D
 
     points1_3D[:crop_top,:,:] = np.nan
-    
-    ##
-
-    if T is not None:
-        T = np.linalg.inv(T)
-        print(T)
-        print(points1_3D[300,600])
-        print(points2_3D[300,600])
-        points2_hom = np.dstack((points2_3D, np.ones((depth_0.shape[0], depth_0.shape[1], 1))))
-        vec = points2_hom[300,600]
-        print(vec)
-        #print(T @ vec)
-
-        #points2_hom[:,:,:3] *= 7.425204778189303
-        # points2_hom[:,:,:3] *= 0.01695
-        points2_hom = np.einsum('ijk,lk->ijl', points2_hom, T)
-        #points2_hom[:,:,:3] /= 7.425204778189303
-       #  points2_hom[:,:,:3] /= 0.01695
-
-        print(points2_hom[300,600])
-        points2_3D = points2_hom[:,:,:3] / points2_hom[:,:,3, np.newaxis]
-        print(points2_3D[300,600])
-
-    ##
-
-    #print(points1_3D[216,904])
-    #print(points1_3D[220,950])
-
 
     points1_3D = points1_3D.reshape((-1,3))
     points2_3D = points2_3D.reshape((-1,3))
