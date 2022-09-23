@@ -23,9 +23,18 @@ def maximizeWindow():
         mng.window.showMaximized()
 
 
+def getdisp0(filepath):
+    disp0 = None
+    filepath2 = os.path.join(os.path.dirname(filepath), "..", "disp_0", os.path.basename(filepath))
+    if os.path.exists(filepath2):
+        disp0 = flow_IO.readDispFile(filepath2)
+    return disp0
+
+
 def showDisp(filepath):
     filepath = os.path.abspath(filepath)
     disp = flow_IO.readDispFile(filepath)
+    disp0 = getdisp0(filepath)
 
     dir_name = os.path.dirname(filepath)
     dir_entries = [os.path.join(dir_name, i) for i in sorted(os.listdir(dir_name))]
@@ -39,22 +48,28 @@ def showDisp(filepath):
     ax_implot = plt.imshow(disp, interpolation="nearest")
 
     axbuttons = plt.axes([0.7, 0.005, 0.25, 0.195], frame_on=False, aspect='equal')
-    buttons = RadioButtons(axbuttons, ["KITTI", "turbo", "plasma"])
+    buttons = RadioButtons(axbuttons, ["KITTI", "turbo", "plasma", "change"])
 
     def updateEverything():
         nonlocal disp
+        nonlocal disp0
 
         plt.get_current_fig_manager().set_window_title(filepath)
         disp = flow_IO.readDispFile(filepath)
+        disp0 = getdisp0(filepath)
 
         if buttons.value_selected == "KITTI":
             ax_implot.set_data(disp_plot.colorplot(disp))
         elif buttons.value_selected == "turbo":
             ax_implot.set_data(disp)
-            ax_implot.set(cmap="turbo")
+            ax_implot.set(cmap="turbo", clim=(0,100))
         elif buttons.value_selected == "plasma":
             ax_implot.set_data(disp)
-            ax_implot.set(cmap="plasma")
+            ax_implot.set(cmap="plasma", clim=(0,100))
+        elif buttons.value_selected == "change":
+            ax_implot.set_data(disp-disp0)
+            ax_implot.set(cmap="plasma", clim=(-10,10))
+
         fig.canvas.draw_idle()
 
     def update(val):
@@ -62,10 +77,13 @@ def showDisp(filepath):
             ax_implot.set_data(disp_plot.colorplot(disp))
         elif buttons.value_selected == "turbo":
             ax_implot.set_data(disp)
-            ax_implot.set(cmap="turbo")
+            ax_implot.set(cmap="turbo", clim=(0,100))
         elif buttons.value_selected == "plasma":
             ax_implot.set_data(disp)
-            ax_implot.set(cmap="plasma")
+            ax_implot.set(cmap="plasma", clim=(0,100))
+        elif buttons.value_selected == "change":
+            ax_implot.set_data(disp-disp0)
+            ax_implot.set(cmap="plasma", clim=(-10,10))
         fig.canvas.draw_idle()
 
     def format_coord(x, y):
@@ -78,14 +96,26 @@ def showDisp(filepath):
 
     def key_press_event(event):
         nonlocal filepath
-        if event.key not in ["left", "right"]:
+        if event.key not in ["left", "right", "home", "end", "pagedown", "pageup"]:
             return
         idx = dir_entries.index(filepath)
-        if event.key == "left" and idx > 0:
+        if event.key == "left" and idx - 1 >= 0:
             filepath = dir_entries[idx - 1]
             updateEverything()
-        elif event.key == "right" and idx < len(dir_entries) - 1:
+        elif event.key == "right" and idx + 1 < len(dir_entries):
             filepath = dir_entries[idx + 1]
+            updateEverything()
+        elif event.key == "home":
+            filepath = dir_entries[0]
+            updateEverything()
+        elif event.key == "end":
+            filepath = dir_entries[-1]
+            updateEverything()
+        elif event.key == "pagedown" and idx + 10 < len(dir_entries):
+            filepath = dir_entries[idx + 10]
+            updateEverything()
+        elif event.key == "pageup" and idx - 10 >= 0:
+            filepath = dir_entries[idx - 10]
             updateEverything()
 
     ax.format_coord = format_coord
