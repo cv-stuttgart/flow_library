@@ -5,7 +5,7 @@ import sys
 from PIL import Image
 import numpy as np
 
-import sceneflow_plot
+import sceneflow_plot3D
 import flow_IO
 import flow_datasets
 
@@ -33,7 +33,7 @@ def main(filepath):
     else:
         image1 = flow_datasets.getKITTI15Test()[f"{seq:06d}"]["images"][0]
 
-    sceneflow_plot.sceneflow_plot3D(disp0, disp1, flow, intrinsics, np.asarray(Image.open(image1)))
+    sceneflow_plot3D.sceneflow_plot3D(disp0, disp1, flow, intrinsics, np.asarray(Image.open(image1)))
 
 
 if __name__ == "__main__":
