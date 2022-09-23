@@ -75,6 +75,27 @@ def backproject_flow3d(flow2d, depth0, depth1, intrinsics, T=None, return_2d=Fal
     return flow3d, flow2d
 
 
+def backproject_flow3d_target(flow2d, depth1, intrinsics):
+    """ compute 3D flow from 2D flow + depth change """
+
+    ht, wd = flow2d.shape[0:2]
+
+    fx, fy, cx, cy = intrinsics
+    
+    y0, x0 = np.meshgrid(np.arange(ht), np.arange(wd))
+    x0 = x0.T
+    y0 = y0.T
+
+    x1 = x0 + flow2d[...,0]
+    y1 = y0 + flow2d[...,1]
+
+    X1 = depth1 * ((x1 - cx) / fx)
+    Y1 = depth1 * ((y1 - cy) / fy)
+    Z1 = depth1
+    point1 = np.stack([X1, Y1, Z1], axis=-1)
+    return point1
+
+
 def undo_motioncompensation(flow3d, depth, intrinsics, T):
     X0 = inv_project(depth, intrinsics)
     X1 = X0 + flow3d

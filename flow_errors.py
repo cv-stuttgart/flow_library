@@ -1,5 +1,5 @@
 import numpy as np
-
+from flow_utils import backproject_flow3d_target
 
 def compute_AAE(flow, gt):
     """compute the average angular error (AAE) in degrees between the estimated flow field and the groundtruth flow field
@@ -51,7 +51,7 @@ def compute_AEE(flow, gt, ee=None):
     return np.nansum(ee) / count
 
 
-def compute_BP(flow, gt, useKITTI15=False, ee=None, return_mask=False):
+def compute_BP(flow, gt, useKITTI15=False, ee=None, return_mask=False, t1=3.0, t2=0.05):
     """compute the bad pixel error (BP) between the estimated flow field and the groundtruth flow field.
     The bad pixel error is defined as the percentage of valid pixels.
     Valid pixel are generally defined as those whose endpoint is smaller than 3px.
@@ -73,11 +73,11 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None, return_mask=False):
 
     # set the ee of nan pixels to zero
     ee = np.nan_to_num(ee, nan=0.0)
-    abs_err = ee > 3.0
+    abs_err = ee > t1
 
     if useKITTI15:
         gt_vec_length = np.nan_to_num(np.sqrt(np.square(gt[..., 0]) + np.square(gt[..., 1])), nan=0.0)
-        rel_err = ee > 0.05 * gt_vec_length
+        rel_err = ee > t2 * gt_vec_length
 
         bp_mask = abs_err & rel_err
     else:
@@ -89,7 +89,7 @@ def compute_BP(flow, gt, useKITTI15=False, ee=None, return_mask=False):
         return 100 * np.sum(bp_mask) / count
 
 
-def compute_Fl(flow, gt, ee=None, return_mask=False):
+def compute_Fl(flow, gt, ee=None, return_mask=False, t1=3.0, t2=0.05):
     """compute the bad pixel error (Fl) between the estimated flow field and the groundtruth flow field.
     The bad pixel error is defined as the percentage of valid pixels.
     Valid pixel are defined as those whose endpoint is smaller than 3px OR less than 5% of the groundtruth vector length.
@@ -99,7 +99,7 @@ def compute_Fl(flow, gt, ee=None, return_mask=False):
     return_mask: if True, return pixelwise boolean mask instead of aggregated number
     return: Fl error as percentage [0;100], or mask if return_mask is True
     """
-    return compute_BP(flow, gt, useKITTI15=True, ee=ee, return_mask=return_mask)
+    return compute_BP(flow, gt, useKITTI15=True, ee=ee, return_mask=return_mask, t1=t1, t2=t2)
 
 
 def printAllErrorMeasures(flow, gt):
@@ -139,10 +139,10 @@ def getAllErrorMeasures_area(flow, gt, area):
     return getAllErrorMeasures(flow, gt_area)
 
 
-def compute_SF(disp0, disp1, flow, gt_disp0, gt_disp1, gt_flow, return_all=False):
-    disp0_mask = compute_DisparityError(disp0, gt_disp0, return_mask=True)
-    disp1_mask = compute_DisparityError(disp1, gt_disp1, return_mask=True)
-    flow_mask = compute_Fl(flow, gt_flow, return_mask=True)
+def compute_SF(disp0, disp1, flow, gt_disp0, gt_disp1, gt_flow, t1=3.0, t2=0.05):
+    disp0_mask = compute_DisparityError(disp0, gt_disp0, return_mask=True, t1=t1, t2=t2)
+    disp1_mask = compute_DisparityError(disp1, gt_disp1, return_mask=True, t1=t1, t2=t2)
+    flow_mask = compute_Fl(flow, gt_flow, return_mask=True, t1=t1, t2=t2)
 
     valid = (~np.isnan(gt_disp0)) & (~np.isnan(gt_disp1)) & (~np.isnan(gt_flow[:,:,0])) & (~np.isnan(gt_flow[:,:,1]))
     sf_mask = disp0_mask | disp1_mask | flow_mask
@@ -183,16 +183,16 @@ def compute_SF_full(estimate, gt_noc, gt_occ, object_map, return_list=False):
     return output
 
 
-def compute_DisparityError(disp, gt, return_mask=False):
+def compute_DisparityError(disp, gt, return_mask=False, t1=3.0, t2=0.05):
     error = np.abs(disp - gt)
     # number of valid pixels:
     count = np.count_nonzero(~np.isnan(error))
 
     # set the ee of nan pixels to zero
     error = np.nan_to_num(error, nan=0.0)
-    abs_err = error > 3.0
+    abs_err = error > t1
 
-    rel_err = error > 0.05 * np.nan_to_num(gt, nan=0.0)
+    rel_err = error > t2 * np.nan_to_num(gt, nan=0.0)
 
     bp_mask = abs_err & rel_err
 
@@ -201,3 +201,14 @@ def compute_DisparityError(disp, gt, return_mask=False):
     else:
         return 100 * np.sum(bp_mask) / count
 
+
+def compute_absDispError(disp, gt):
+    valid = ~np.isnan(gt)
+    return (np.abs(np.nan_to_num(gt)-disp) * valid).sum() / valid.sum()
+
+
+def compute_epe3DError(disp2, flow, gt_disp2, gt_flow, intrinsics):
+    target_gt = backproject_flow3d_target(gt_flow, intrinsics[0] / gt_disp2, intrinsics)
+    target_est = backproject_flow3d_target(flow, intrinsics[0] / disp2, intrinsics)
+    valid = ~np.isnan(target_gt.sum(axis=-1))
+    return np.nansum(np.linalg.norm(target_gt-target_est, axis=-1)) / valid.sum()
