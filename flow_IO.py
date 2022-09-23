@@ -5,6 +5,8 @@ import re
 import sys
 import csv
 from PIL import Image
+import h5py
+
 
 FLO_TAG_FLOAT = 202021.25  # first 4 bytes in flo file; check for this when READING the file
 FLO_TAG_STRING = "PIEH"    # first 4 bytes in flo file; use this when WRITING the file
@@ -27,6 +29,8 @@ def readFlowFile(filepath):
         return readNpyFlow(filepath)
     elif filepath.endswith(".pfm"):
         return readPfmFlow(filepath)
+    elif filepath.endswith(".flo5"):
+        return readFlo5Flow(filepath)
     else:
         raise ValueError(f"readFlowFile: Unknown file format for {filepath}")
 
@@ -51,6 +55,8 @@ def writeFlowFile(flow, filepath):
         return writePngFlow(flow, filepath)
     elif filepath.endswith(".npy"):
         return writeNpyFile(flow, filepath)
+    elif filepath.endswith(".flo5"):
+        return writeFlo5File(flow, filepath)
     else:
         raise ValueError(f"writeFlowFile: Unknown file format for {filepath}")
 
@@ -224,6 +230,18 @@ def writeNpyFile(arr, filepath):
     np.save(filepath, arr)
 
 
+def writeFlo5File(flow, filename):
+    with h5py.File(filename, "w") as f:
+        f.create_dataset("flow", data=flow, compression="gzip", compression_opts=9)
+
+
+def readFlo5Flow(filename):
+    with h5py.File(filename, "r") as f:
+        if "flow" not in f.keys():
+            raise IOError(f"File {filename} does not have a 'flow' key. Is this a valid flo5 file?")
+        return f["flow"][()]
+
+
 def readPfmFlow(filepath):
     """read optical flow from file stored in pfm file format as used in the FlyingThings3D (Mayer et al., 2016) dataset.
     filepath: path to file where to read from
@@ -326,6 +344,8 @@ def readDispFile(filepath):
         return readNpyFlow(filepath)
     elif filepath.endswith(".pfm"):
         return readPfmDisp(filepath)
+    elif filepath.endswith(".dsp5"):
+        return readDsp5Disp(filepath)
     else:
         raise ValueError(f"readDispFile: Unknown file format for {filepath}")
 
@@ -377,6 +397,18 @@ def writePngDisp(disp, filepath):
         writer.write(f, disp)
 
 
+def writeDsp5File(disp, filename):
+    with h5py.File(filename, "w") as f:
+        f.create_dataset("disparity", data=disp, compression="gzip", compression_opts=9)
+
+
+def readDsp5Disp(filename):
+    with h5py.File(filename, "r") as f:
+        if "disparity" not in f.keys():
+            raise IOError(f"File {filename} does not have a 'disparity' key. Is this a valid dsp5 file?")
+        return f["disparity"][()]
+
+
 def writeDispFile(disp, filepath):
     """write disparity to file. Supports png (KITTI) and npy (numpy) file format.
     disp: disparity with shape height x width. Invalid values should be represented as np.nan
@@ -395,6 +427,8 @@ def writeDispFile(disp, filepath):
         writePngDisp(disp, filepath)
     elif filepath.endswith(".npy"):
         writeNpyFile(disp, filepath)
+    elif filepath.endswith(".dsp5"):
+        writeDsp5File(disp, filepath)
 
 
 def readKITTIObjMap(filepath):
@@ -412,3 +446,15 @@ def readKITTIIntrinsics(filepath, image=2):
                 K = np.array(row[1:], dtype=np.float32).reshape(3,3)
                 kvec = np.array([K[0,0], K[1,1], K[0,2], K[1,2]])
                 return kvec
+
+
+def writeMap5File(map_, filename):
+    with h5py.File(filename, "w") as f:
+        f.create_dataset("map", data=map_, compression="gzip", compression_opts=9)
+
+
+def readMap5File(filename):
+    with h5py.File(filename, "r") as f:
+        if "map" not in f.keys():
+            raise IOError(f"File {filename} does not have a 'map' key. Is this a valid map5 file?")
+        return f["map"][()]

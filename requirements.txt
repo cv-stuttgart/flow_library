@@ -1,3 +1,5 @@
 numpy
 pypng
 matplotlib
+open3d
+h5py
