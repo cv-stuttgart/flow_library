@@ -232,7 +232,7 @@ def writeNpyFile(arr, filepath):
 
 def writeFlo5File(flow, filename):
     with h5py.File(filename, "w") as f:
-        f.create_dataset("flow", data=flow, compression="gzip", compression_opts=9)
+        f.create_dataset("flow", data=flow, compression="gzip", compression_opts=5)
 
 
 def readFlo5Flow(filename):
@@ -399,7 +399,7 @@ def writePngDisp(disp, filepath):
 
 def writeDsp5File(disp, filename):
     with h5py.File(filename, "w") as f:
-        f.create_dataset("disparity", data=disp, compression="gzip", compression_opts=9)
+        f.create_dataset("disparity", data=disp, compression="gzip", compression_opts=5)
 
 
 def readDsp5Disp(filename):
@@ -450,7 +450,7 @@ def readKITTIIntrinsics(filepath, image=2):
 
 def writeMap5File(map_, filename):
     with h5py.File(filename, "w") as f:
-        f.create_dataset("map", data=map_, compression="gzip", compression_opts=9)
+        f.create_dataset("map", data=map_, compression="gzip", compression_opts=5)
 
 
 def readMap5File(filename):
