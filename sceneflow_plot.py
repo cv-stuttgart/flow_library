@@ -111,7 +111,7 @@ def plotInteractive4way(image1_L, image1_R, image2_L, image2_R,
             axs[0,1].add_patch(circle)
             plt.draw()
             # t left frame:
-            circle = patches.Circle((event.xdata+flow_BW_right[y,x,0]+disp2_FW_right[y,x], event.ydata+flow_BW_right[y,x,1]), radius=0.5, color="red")
+            circle = patches.Circle((event.xdata+flow_BW_right[y,x,0]+disp2_BW_right[y,x], event.ydata+flow_BW_right[y,x,1]), radius=0.5, color="red")
             axs[0,0].add_patch(circle)
         plt.draw()
 
