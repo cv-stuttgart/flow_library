@@ -99,6 +99,10 @@ def colorplot_light(flow, auto_scale=True, max_scale=-1, return_max=False):
         col[~idx] = col[~idx] * 0.75   # out of range
         flow_image[:,:,i] = np.floor(255 * col)
         flow_image[nan, i] = 0
+
+    # reset flow
+    flow[nan, :] = np.nan
+
     if return_max:
         return flow_image, max_scale
     else:
