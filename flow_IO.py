@@ -448,13 +448,6 @@ def readKITTIIntrinsics(filepath, image=2):
                 return kvec
 
 
-def writeMap5File(map_, filename):
-    with h5py.File(filename, "w") as f:
-        f.create_dataset("map", data=map_, compression="gzip", compression_opts=5)
+def writePngMapFile(map_, filename):
+    Image.fromarray(map_).save(filename)
 
-
-def readMap5File(filename):
-    with h5py.File(filename, "r") as f:
-        if "map" not in f.keys():
-            raise IOError(f"File {filename} does not have a 'map' key. Is this a valid map5 file?")
-        return f["map"][()]
