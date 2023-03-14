@@ -101,14 +101,26 @@ def showFlow(filepath):
 
     def key_press_event(event):
         nonlocal filepath
-        if event.key not in ["left", "right"]:
+        if event.key not in ["left", "right", "home", "end", "pagedown", "pageup"]:
             return
         idx = dir_entries.index(filepath)
-        if event.key == "left" and idx > 0:
+        if event.key == "left" and idx - 1 >= 0:
             filepath = dir_entries[idx - 1]
             updateEverything()
-        elif event.key == "right" and idx < len(dir_entries) - 1:
+        elif event.key == "right" and idx + 1 < len(dir_entries):
             filepath = dir_entries[idx + 1]
+            updateEverything()
+        elif event.key == "home":
+            filepath = dir_entries[0]
+            updateEverything()
+        elif event.key == "end":
+            filepath = dir_entries[-1]
+            updateEverything()
+        elif event.key == "pagedown" and idx + 10 < len(dir_entries):
+            filepath = dir_entries[idx + 10]
+            updateEverything()
+        elif event.key == "pageup" and idx - 10 >= 0:
+            filepath = dir_entries[idx - 10]
             updateEverything()
 
     ax.format_coord = format_coord

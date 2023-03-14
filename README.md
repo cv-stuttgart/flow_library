@@ -2,7 +2,7 @@
 Pure python library providing tools for optical flow computation.
 
 ### Features:
-* Read and write optical flow files (.flo, .png)
+* Read and write optical flow files and disparity files
 * visualize optical flow fields
 * interactive GUI to visualize optical flow files
 * compute error measures

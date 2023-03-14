@@ -1,5 +1,9 @@
 import os
 import re
+import flow_IO
+import flow_errors
+import numpy as np
+import multiprocessing
 
 
 SUPPORTED_DATASETS = ["middlebury", "kitti12", "kitti15", "mpi_sintel"]
@@ -303,6 +307,121 @@ def findGroundtruth(filepath):
                 return getKITTI12Train()[sequence]["flows"][0]
 
     return None
+
+
+def getGroundTruthSF_KITTI(i):
+    dataset_basepath = os.getenv("DATASETS")
+
+    if dataset_basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
+    dataset_basepath = os.path.join(dataset_basepath, "kitti15", "training")
+    # groundtruth
+    disp_noc_0 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_noc_0", f"{i:06d}_10.png"))
+    disp_noc_1 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_noc_1", f"{i:06d}_10.png"))
+    flow_noc = flow_IO.readFlowFile(os.path.join(dataset_basepath, "flow_noc", f"{i:06d}_10.png"))
+    disp_occ_0 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_occ_0", f"{i:06d}_10.png"))
+    disp_occ_1 = flow_IO.readDispFile(os.path.join(dataset_basepath, "disp_occ_1", f"{i:06d}_10.png"))
+    flow_occ = flow_IO.readFlowFile(os.path.join(dataset_basepath, "flow_occ", f"{i:06d}_10.png"))
+    # object map (fg/bg)
+    obj_map = flow_IO.readKITTIObjMap(os.path.join(dataset_basepath,"obj_map", f"{i:06d}_10.png"))
+    return (disp_noc_0, disp_noc_1, flow_noc), (disp_occ_0, disp_occ_1, flow_occ), obj_map
+
+
+def getIntrinsics_KITTI(i, mode="training", image=2):
+    dataset_basepath = os.getenv("DATASETS")
+
+    if dataset_basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
+    dataset_basepath = os.path.join(dataset_basepath, "kitti15", mode)
+    return flow_IO.readKITTIIntrinsics(os.path.join(dataset_basepath, "calib_cam_to_cam", f"{i:06d}.txt"), image=image)
+
+
+def evaluateSF_KITTI_seq(basepath, seqnum):
+    disp_0 = flow_IO.readDispFile(os.path.join(basepath,"disp_0", f"{seqnum:06d}_10.png"))
+    disp_1 = flow_IO.readDispFile(os.path.join(basepath,"disp_1", f"{seqnum:06d}_10.png"))
+    flow = flow_IO.readFlowFile(os.path.join(basepath, "flow", f"{seqnum:06d}_10.png"))
+    gt_noc, gt_occ, obj_map = getGroundTruthSF_KITTI(seqnum)
+    e = flow_errors.compute_SF_full((disp_0, disp_1, flow), gt_noc, gt_occ, obj_map, return_list=True)
+    #print(e)
+    return e
+
+
+def evaluateSF_KITTI(folderpath):
+    assert os.path.exists(os.path.join(folderpath, "disp_0"))
+    assert os.path.exists(os.path.join(folderpath, "disp_1"))
+    assert os.path.exists(os.path.join(folderpath, "flow"))
+
+    dataset_basepath = os.getenv("DATASETS")
+
+    if dataset_basepath is None:
+        raise ValueError(f"DATASET environment variable not set")
+
+    dataset_basepath = os.path.join(dataset_basepath, "kitti15", "training")
+
+    errors = []
+
+    # for i in range(200):
+    #     errors.append(evaluateSF_KITTI_seq(folderpath, i))
+
+    with multiprocessing.Pool(15) as p:
+        args = [(folderpath, i) for i in range(200)]
+        errors = p.starmap(evaluateSF_KITTI_seq, args)
+
+
+    errors = np.asarray(errors)
+    errors = np.average(errors, axis=0)
+    print(errors)
+
+
+def sf_findCorrespondingFiles(filepath):
+    if not os.path.exists(filepath) or not os.path.isfile(filepath):
+        raise IOError(f"file path {filepath} not found!")
+
+    filepath = os.path.abspath(filepath)
+
+    parts = filepath.split(os.path.sep)
+
+    if len(parts) < 2:
+        raise ValueError(f"path has nor enough parents: {filepath}")
+
+    flowpath = None
+    disp0path = None
+    disp1path = None
+
+    if parts[-2] in ["flow", "disp_0", "disp_1"]:
+        parts[-2] = "flow"
+        flowpath = os.path.sep.join(parts)
+        parts[-2] = "disp_0"
+        disp0path = os.path.sep.join(parts)
+        parts[-2] = "disp_1"
+        disp1path = os.path.sep.join(parts)
+    elif parts[-2] in ["flow_noc", "disp_noc_0", "disp_noc_1"]:
+        parts[-2] = "flow_noc"
+        flowpath = os.path.sep.join(parts)
+        parts[-2] = "disp_noc_0"
+        disp0path = os.path.sep.join(parts)
+        parts[-2] = "disp_noc_1"
+        disp1path = os.path.sep.join(parts)
+    elif parts[-2] in ["flow_occ", "disp_occ_0", "disp_occ_1"]:
+        parts[-2] = "flow_occ"
+        flowpath = os.path.sep.join(parts)
+        parts[-2] = "disp_occ_0"
+        disp0path = os.path.sep.join(parts)
+        parts[-2] = "disp_occ_1"
+        disp1path = os.path.sep.join(parts)
+    else:
+        raise IOError(f"Could not find corresponding files to {filepath} --> {parts[-2]} does not fit!")
+    
+    if not os.path.exists(flowpath):
+        raise IOError(f"Corresponding flow path does not exist: {flowpath}")
+    if not os.path.exists(disp0path):
+        raise IOError(f"Corresponding disp0 path does not exist: {disp0path}")
+    if not os.path.exists(disp1path):
+        raise IOError(f"Corresponding disp1 path does not exist: {disp1path}")
+    
+    return disp0path, disp1path, flowpath
 
 
 if __name__ == "__main__":
