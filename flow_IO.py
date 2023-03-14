@@ -17,7 +17,7 @@ FLO_UNKNOWN_FLOW = 1e10 # value to use to represent unknown flow in flo file for
 def readFlowFile(filepath):
     """read flow files in several formats. The resulting flow has shape height x width x 2.
     For positions where there is no groundtruth available, the flow is set to np.nan.
-    Supports flo (Sintel), png (KITTI), npy (numpy) and pfm (FlyingThings3D) file format.
+    Supports flo (Sintel), png (KITTI), npy (numpy), pfm (FlyingThings3D) and flo5 (Spring) file format.
     filepath: path to the flow file
     returns: flow with shape height x width x 2
     """
