@@ -160,28 +160,6 @@ def compute_SF(disp0, disp1, flow, gt_disp0, gt_disp1, gt_flow, t1=3.0, t2=0.05)
     return d1_badcount, d1_pxcount, d2_badcount, d2_pxcount, fl_badcount, fl_pxcount, sf_badcount, sf_pxcount
 
 
-def compute_SF_full(estimate, gt_noc, gt_occ, object_map, return_list=False):
-    disp0, disp1, flow = estimate
-    if return_list:
-        output = []
-    else:
-        output = {}
-    for obj, obj_name in zip([object_map, ~object_map, None], ["fg", "bg", "all"]):
-        if not return_list:
-            output[obj_name] = {}
-        for occlusion, occ_name in zip([gt_noc, gt_occ], ["noc", "occ"]):
-            if not return_list:
-                output[obj_name][occ_name] = {}
-            gt_disp_0, gt_disp_1, gt_flow = occlusion
-            d1, d2, fl, sf = compute_SF(disp0, disp1, flow, gt_disp_0, gt_disp_1, gt_flow, return_all=True, eval_mask=obj)
-            for e, n in zip([d1, d2, fl, sf], ["d1", "d2", "fl", "sf"]):
-                if return_list:
-                    output.append(e)
-                else:
-                    output[obj_name][occ_name][n] = e
-
-    return output
-
 
 def compute_DisparityError(disp, gt, return_mask=False, t1=3.0, t2=0.05):
     error = np.abs(disp - gt)
